@@ -1,0 +1,2 @@
+logged_at,sport,game_id,date,home,away,home_name,away_name,model_margin,model_total,home_win,home_spread,total_line,market_home_win,cover_home,over_prob
+2026-03-15 09:00:00-04:00,nba,e0,2026-11-24 19:00:00+00:00,BOS,NYK,BOS Full,NY Full,2.463150647539976,130.3213105185009,0.5813165006339989,-6.5,150.5,0.7059759216515494,0.36828307426940576,0.13113577900746715

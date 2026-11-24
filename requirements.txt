@@ -1,0 +1,11 @@
+# Version ranges known to work with this code. After your first successful
+# deploy, run `pip freeze > requirements.lock` to capture exact versions.
+streamlit>=1.40,<2
+altair>=5,<6
+pandas>=2.1,<4
+numpy>=1.26,<3
+scipy>=1.11,<2
+requests>=2.31,<3
+pyarrow>=14
+nflreadpy>=0.1
+nba_api>=1.4
