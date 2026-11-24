@@ -107,3 +107,21 @@ def prop_lines(sport: str, matchups: tuple, stats: tuple) -> tuple[pd.DataFrame,
 
 def clear(fn) -> None:
     fn.clear()
+
+
+@st.cache_data(ttl=30 * 60, show_spinner="Fetching alternate lines (uses API credits)…")
+def alt_lines(sport: str, matchups: tuple, stats: tuple) -> tuple[pd.DataFrame, str | None, list]:
+    from engine.odds_api import NBA_ALT_MARKETS, NBA_TEAMS, NFL_ALT_MARKETS, NFL_TEAMS, alt_ladder
+    diag = Diagnostics()
+    client = OddsClient(odds_key(), diag)
+    cfg = get_config(sport)
+    names = NFL_TEAMS if sport == "nfl" else NBA_TEAMS
+    alt_map = NFL_ALT_MARKETS if sport == "nfl" else NBA_ALT_MARKETS
+    events = client._get(f"/sports/{cfg.odds_api_key}/events") or []
+    frames = []
+    for ev in events:
+        if (names.get(ev.get("home_team")), names.get(ev.get("away_team"))) in set(matchups):
+            df = alt_ladder(client, cfg.odds_api_key, ev["id"], list(stats), alt_map)
+            if not df.empty:
+                frames.append(df)
+    return (pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()), client.remaining, diag.warnings

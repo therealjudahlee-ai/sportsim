@@ -195,3 +195,55 @@ def match_team(name: str, candidates: dict[str, str]) -> str | None:
         return normed[target]
     hit = difflib.get_close_matches(target, list(normed), n=1, cutoff=0.85)
     return normed[hit[0]] if hit else None
+
+
+# ----------------------------------------------------------------------------
+# Alternate lines (the 2x-3x ladders)
+# ----------------------------------------------------------------------------
+NFL_ALT_MARKETS = {
+    "passing_yards": "player_pass_yds_alternate",
+    "rushing_yards": "player_rush_yds_alternate",
+    "receiving_yards": "player_reception_yds_alternate",
+    "receptions": "player_receptions_alternate",
+    "passing_tds": "player_pass_tds_alternate",
+}
+NBA_ALT_MARKETS = {
+    "PTS": "player_points_alternate", "REB": "player_rebounds_alternate", "AST": "player_assists_alternate",
+    "FG3M": "player_threes_alternate", "PRA": "player_points_rebounds_assists_alternate",
+    "PR": "player_points_rebounds_alternate", "PA": "player_points_assists_alternate",
+    "RA": "player_rebounds_assists_alternate", "BLK": "player_blocks_alternate", "STL": "player_steals_alternate",
+}
+
+
+def alt_ladder(client: OddsClient, sport_key: str, event_id: str, stats: list[str], alt_map: dict) -> pd.DataFrame:
+    """Every rung of every alternate ladder: best price per (player, stat, line, side) across books."""
+    markets = ",".join(alt_map[s] for s in stats if s in alt_map)
+    if not markets:
+        return pd.DataFrame()
+    data = client._get(f"/sports/{sport_key}/events/{event_id}/odds", regions=client.regions,
+                       markets=markets, oddsFormat="american")
+    if not data:
+        return pd.DataFrame()
+    rev = {v: k for k, v in alt_map.items()}
+    best: dict = {}
+    for bk in data.get("bookmakers", []):
+        book = bk.get("title", bk.get("key"))
+        for mk in bk.get("markets", []):
+            stat = rev.get(mk.get("key"))
+            if not stat:
+                continue
+            for o in mk.get("outcomes", []):
+                side = {"over": "over", "under": "under"}.get(str(o.get("name")).lower())
+                player, point, price = o.get("description"), o.get("point"), o.get("price")
+                if not side or not player or point is None or price is None:
+                    continue
+                k = (player, stat, float(point), side)
+                cur = best.get(k)
+                n = (cur[2] + 1) if cur else 1
+                if cur is None or price > cur[0]:
+                    best[k] = (price, book, n)
+                else:
+                    best[k] = (cur[0], cur[1], n)
+    rows = [{"event_id": event_id, "player": p, "player_norm": norm_name(p), "stat": s, "line": pt, "side": sd,
+             "price": pr, "book": b, "n_books": n} for (p, s, pt, sd), (pr, b, n) in best.items()]
+    return pd.DataFrame(rows)

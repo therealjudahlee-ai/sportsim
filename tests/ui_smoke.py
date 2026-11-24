@@ -102,6 +102,20 @@ def fake_prop_lines(sport, matchups, stats):
     return pd.DataFrame(rows), "440", []
 
 
+def fake_alt_lines(sport, matchups, stats):
+    from engine.common import norm_name
+    ctx = loaders.nfl_ctx() if sport == "nfl" else loaders.nba_ctx("2026-03-15")
+    projs = loaders.projections(sport, ctx["built_at"], tuple(stats), "2026-03-15")
+    rows = []
+    for p in projs:
+        for k, price in enumerate([-150, 110, 150, 190, 240]):
+            rows.append({"event_id": "e", "player": p["player"], "player_norm": norm_name(p["player"]),
+                         "stat": p["stat"], "line": float(np.floor(p["median"] * (0.8 + 0.12 * k)) + 0.5),
+                         "side": "over", "price": price, "book": "BookA", "n_books": 3})
+    return pd.DataFrame(rows), "430", []
+
+
+loaders.alt_lines = fake_alt_lines
 loaders.game_lines = fake_game_lines
 loaders.prop_lines = fake_prop_lines
 st.session_state.clear()
@@ -152,5 +166,6 @@ for k in ("nfl+odds", "nba+odds", "nba+dfs"):
     log = results[k][1]
     print(k, "| tickets:", count(log, "markdown", "**Ticket"), "| lineups:", count(log, "markdown", "**Lineup"),
           "| downloads:", [e[1] for e in log if e[0] == "download"],
+          "| 2x3x cards:", count(log, "markdown", "#### "), "| 2x3x caption:", [e[1][:40] for e in log if e[0] == "caption" and "plays ·" in e[1]],
           "| props captions:", [e[1][:70] for e in log if e[0] == "caption" and "props shown" in e[1]])
 sys.exit(1 if bad else 0)

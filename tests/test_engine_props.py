@@ -101,3 +101,36 @@ def test_misc():
     assert match_team("Kansas City Chiefs", {v: k for k, v in NFL_TEAMS.items()}) == "KC"
     assert match_team("Michigan St Spartans", {"127": "Michigan State Spartans"}) == "127"
     assert shrink_matchup(1.3, 8) == 1.15
+
+
+def test_value_finder_and_fair_ladder():
+    from engine.edges import value_finder, fair_ladder, hit_rate
+    d = StatDist("gamma", 25.0, (0.35 * 25) ** 2)
+    proj = [{"player": "A", "player_norm": "a", "team": "T", "opp": "O", "game": "g", "stat": "PTS",
+             "median": d.quantile(0.5), "dist": d, "hist": [20, 30, 25, 28, 22, 31, 19, 27, 26, 24]}]
+    lad = pd.DataFrame({"player": ["A"] * 4, "player_norm": ["a"] * 4, "stat": ["PTS"] * 4,
+                        "line": [24.5, 27.5, 29.5, 34.5], "side": ["over"] * 4, "price": [-120, 190, 140, 260],
+                        "book": ["X"] * 4, "n_books": [3] * 4})
+    vf = value_finder(proj, lad, 2.0, 3.0)
+    assert set(vf["line"]) == {27.5, 29.5}                 # -120 (1.83x) and +260 (3.6x) excluded
+    r = vf[vf["line"] == 27.5].iloc[0]
+    assert abs(r["ev"] - (d.prob_over(27.5) * 2.9 - 1)) < 1e-9
+    fl = fair_ladder(proj, (2.0, 3.0)).iloc[0]
+    for m in ("2", "3"):
+        line = fl[f"line_{m}x"]
+        assert d.prob_over(line) >= 1 / float(m) > d.prob_over(line + 1)
+    assert hit_rate([1, 2, 3, 4, 5, 6], 3.5, 10) == 0.5
+
+
+def test_alt_ladder_parsing():
+    from engine.odds_api import OddsClient, alt_ladder, NBA_ALT_MARKETS
+    c = OddsClient("k")
+    c._get = lambda path, **p: {"bookmakers": [
+        {"title": "A", "markets": [{"key": "player_points_alternate", "outcomes": [
+            {"name": "Over", "description": "Jayson Tatum", "point": 29.5, "price": 140},
+            {"name": "Over", "description": "Jayson Tatum", "point": 32.5, "price": 210}]}]},
+        {"title": "B", "markets": [{"key": "player_points_alternate", "outcomes": [
+            {"name": "Over", "description": "Jayson Tatum", "point": 29.5, "price": 155}]}]}]}
+    df = alt_ladder(c, "basketball_nba", "e1", ["PTS"], NBA_ALT_MARKETS)
+    r = df[df["line"] == 29.5].iloc[0]
+    assert r["price"] == 155 and r["book"] == "B" and r["n_books"] == 2 and len(df) == 2

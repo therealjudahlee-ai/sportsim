@@ -272,3 +272,129 @@ def dfs_tab(sport: str, ctx: dict, date_str: str = ""):
 
     with st.expander("Player pool"):
         st.dataframe(pool.drop(columns=["id"]), hide_index=True, use_container_width=True)
+
+
+# =============================================================================
+NFL_ALT_STATS = ["receiving_yards", "rushing_yards", "passing_yards", "receptions", "passing_tds"]
+NBA_ALT_STATS = ["PTS", "REB", "AST", "FG3M", "PRA", "PR", "PA", "RA"]
+TIER_NAMES = ["Tier 1 · best value", "Tier 2", "Tier 3"]
+
+
+def value_tab(sport: str, ctx: dict, date_str: str = ""):
+    st.caption("Props paying **2x–3x** (+100 to +200) where the model thinks you're getting a better price than "
+               "you should. With real lines this scans every rung of the sportsbooks' alternate-line ladders; "
+               "without them it shows the fair line for each payout so you can compare to any app.")
+    alt_stats = NFL_ALT_STATS if sport == "nfl" else NBA_ALT_STATS
+    c1, c2, c3 = st.columns([2.2, 1.6, 1])
+    stats = c1.multiselect("Stats", alt_stats, default=alt_stats[:3], format_func=lambda s: LABELS.get(s, s),
+                           key=f"{sport}_v_stats")
+    lo, hi = c2.slider("Payout range", 1.5, 5.0, (2.0, 3.0), 0.1, key=f"{sport}_v_pay",
+                       help="Decimal payout: 2.0x = +100, 2.5x = +150, 3.0x = +200")
+    n_cards = c3.number_input("Top plays", 1, 20, 6, key=f"{sport}_v_n")
+    if not stats:
+        st.info("Pick at least one stat.")
+        return
+
+    if not loaders.odds_key():
+        _fair_ladder_view(sport, ctx, date_str, stats, lo, hi)
+        return
+
+    n_games = len(ctx["predictions"])
+    if st.button(f"Scan alternate lines (~{max(1, n_games) * len(stats)} credits)", type="primary",
+                 key=f"{sport}_v_load"):
+        matchups = tuple((r["home"], r["away"]) for _, r in ctx["predictions"].iterrows())
+        ladder, remaining, warns = loaders.alt_lines(sport, matchups, tuple(stats))
+        for w in warns:
+            st.warning(w)
+        st.session_state[f"{sport}_ladder"] = (tuple(stats), ladder)
+        st.session_state[f"{sport}_v_credits"] = remaining
+
+    saved = st.session_state.get(f"{sport}_ladder")
+    if not saved:
+        st.caption("Press **Scan alternate lines** to pull the books' alt-line ladders.")
+        _fair_ladder_view(sport, ctx, date_str, stats, lo, hi, compact=True)
+        return
+    from engine.edges import value_finder
+    scanned_stats, ladder = saved
+    projs = loaders.projections(sport, ctx["built_at"], scanned_stats, date_str)
+    f1, f2, f3, f4 = st.columns(4)
+    min_ev = f1.slider("Min EV per $1", -0.10, 0.50, 0.03, 0.01, key=f"{sport}_v_ev")
+    min_books = f2.slider("Min books offering", 1, 6, 1, key=f"{sport}_v_books")
+    game = f3.selectbox("Game", ["All"] + sorted({gi["game"] for gi in ctx["game_info"].values()}),
+                        key=f"{sport}_v_game")
+    one_per = f4.toggle("Best rung per player", True, key=f"{sport}_v_one")
+    vf = value_finder(projs, ladder, lo, hi)
+    if vf.empty:
+        st.warning("No alternate-line rungs in that payout range matched our projections.")
+        return
+    vf = vf[(vf["ev"] >= min_ev) & (vf["n_books"] >= min_books)]
+    if game != "All":
+        vf = vf[vf["game"] == game]
+    if one_per:
+        vf = vf.drop_duplicates(subset=["player"], keep="first")
+    credits = st.session_state.get(f"{sport}_v_credits")
+    st.caption(f"{len(vf)} plays · EV is at the best available price, so the book's cut is already included"
+               + (f" · {credits} API credits left" if credits else ""))
+    if vf.empty:
+        st.info("Nothing clears your filters — lower Min EV or widen the payout range.")
+        return
+
+    for i, (_, r) in enumerate(vf.head(int(n_cards)).iterrows()):
+        with st.container(border=True):
+            st.caption(f"**{TIER_NAMES[i] if i < 3 else f'Tier {i + 1}'}** · {r['game']}")
+            price = f"+{r['price']:.0f}" if r["price"] > 0 else f"{r['price']:.0f}"
+            st.markdown(f"#### {r['player']} ({r['team']}) — {r['side'].title()} {r['line']:g} "
+                        f"{LABELS.get(r['stat'], r['stat'])}")
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Price", f"{price} · {r['payout']:.2f}x", delta=r["book"], delta_color="off")
+            c2.metric("Model hit %", ui.pct(r["prob"], 1), delta=f"needs {ui.pct(r['implied'], 1)}",
+                      delta_color="off")
+            c3.metric("EV per $1", f"{r['ev']:+.2f}", delta=f"fair payout {r['fair_payout']:.2f}x",
+                      delta_color="off")
+            c4.metric("Recent hit rate", ui.pct(r["hit_l10"]), delta=f"last 20: {ui.pct(r['hit_l20'])}",
+                      delta_color="off")
+            st.caption(f"Projection {r['proj_median']:.1f}" + (f" · {r['notes']}" if r["notes"] else ""))
+
+    with st.expander("All qualifying plays"):
+        show = vf.copy()
+        for c in ("prob", "implied", "hit_l10", "hit_l20"):
+            show[c] = show[c] * 100
+        st.dataframe(show[["player", "team", "game", "stat", "side", "line", "price", "payout", "book",
+                           "proj_median", "prob", "implied", "ev", "hit_l10", "hit_l20"]],
+                     hide_index=True, use_container_width=True, column_config={
+                         "payout": st.column_config.NumberColumn(format="%.2fx"),
+                         "proj_median": st.column_config.NumberColumn("Proj", format="%.1f"),
+                         "prob": st.column_config.NumberColumn("Model %", format="%.1f%%"),
+                         "implied": st.column_config.NumberColumn("Needs %", format="%.1f%%"),
+                         "ev": st.column_config.NumberColumn("EV / $1", format="%+.2f"),
+                         "hit_l10": st.column_config.NumberColumn("L10 hit", format="%.0f%%"),
+                         "hit_l20": st.column_config.NumberColumn("L20 hit", format="%.0f%%")})
+        st.download_button("Download CSV", vf.to_csv(index=False).encode(), f"{sport}_2x3x.csv", "text/csv",
+                           key=f"{sport}_v_dl")
+
+
+def _fair_ladder_view(sport, ctx, date_str, stats, lo, hi, compact=False):
+    from engine.edges import fair_ladder
+    if not compact:
+        ui.no_odds_key_note()
+    payouts = tuple(sorted({round(lo, 1), round((lo + hi) / 2, 1), round(hi, 1)}))
+    projs = loaders.projections(sport, ctx["built_at"], tuple(stats), date_str)
+    if not projs:
+        st.info("No projections available.")
+        return
+    fl = fair_ladder(projs, payouts)
+    st.markdown("**Fair lines by payout** — take the over only if the line you're offered at that payout is "
+                "at or below these.")
+    cols = ["player", "team", "opp", "stat", "proj_median"]
+    cfgs = {"proj_median": st.column_config.NumberColumn("Proj", format="%.1f"),
+            "stat": st.column_config.TextColumn("Stat")}
+    for m in payouts:
+        fl[f"prob_{m:g}x"] *= 100
+        fl[f"hit_l10_{m:g}x"] *= 100
+        cols += [f"line_{m:g}x", f"prob_{m:g}x", f"hit_l10_{m:g}x"]
+        cfgs[f"line_{m:g}x"] = st.column_config.NumberColumn(f"{m:g}x line", format="%.1f")
+        cfgs[f"prob_{m:g}x"] = st.column_config.NumberColumn(f"{m:g}x hit %", format="%.0f%%")
+        cfgs[f"hit_l10_{m:g}x"] = st.column_config.NumberColumn(f"{m:g}x L10", format="%.0f%%")
+    fl["stat"] = fl["stat"].map(lambda s: LABELS.get(s, s))
+    st.dataframe(fl.sort_values("proj_median", ascending=False)[cols], hide_index=True, use_container_width=True,
+                 column_config=cfgs)

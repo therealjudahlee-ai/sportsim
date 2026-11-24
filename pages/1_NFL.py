@@ -21,16 +21,18 @@ ui.page_header(f"NFL · {ctx['season']} Week {ctx['week']}",
                f"{len(preds)} games · injuries from nflverse + ESPN")
 ui.data_status(ctx, on_refresh=loaders.nfl_ctx.clear)
 
-tabs = st.tabs(["Games", "Player props", "Parlays", "DFS", "Team ratings"])
+tabs = st.tabs(["Games", "Player props", "2x–3x Value", "Parlays", "DFS", "Team ratings"])
 with tabs[0]:
     ui.games_board(preds, cfg, src, key="nfl_games", default_cards=16)
 with tabs[1]:
     pro_pages.props_tab("nfl", ctx)
 with tabs[2]:
-    pro_pages.parlay_tab("nfl")
+    pro_pages.value_tab("nfl", ctx)
 with tabs[3]:
-    pro_pages.dfs_tab("nfl", ctx)
+    pro_pages.parlay_tab("nfl")
 with tabs[4]:
+    pro_pages.dfs_tab("nfl", ctx)
+with tabs[5]:
     ui.ratings_table(ctx["ratings"])
     if ctx["team_adj"]:
         st.caption("Injury adjustments this week (points): " +

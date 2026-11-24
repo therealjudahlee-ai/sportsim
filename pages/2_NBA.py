@@ -22,16 +22,18 @@ preds, src = loaders.with_market(ctx["predictions"], "nba")
 ui.page_header(f"NBA · {date_str}", f"{len(preds)} games · {ctx['season'] - 1}-{str(ctx['season'])[-2:]} season")
 ui.data_status(ctx, on_refresh=loaders.nba_ctx.clear)
 
-tabs = st.tabs(["Games", "Player props", "Parlays", "DFS", "Team ratings"])
+tabs = st.tabs(["Games", "Player props", "2x–3x Value", "Parlays", "DFS", "Team ratings"])
 with tabs[0]:
     ui.games_board(preds, cfg, src, key="nba_games", default_cards=15)
 with tabs[1]:
     pro_pages.props_tab("nba", ctx, date_str)
 with tabs[2]:
-    pro_pages.parlay_tab("nba")
+    pro_pages.value_tab("nba", ctx, date_str)
 with tabs[3]:
-    pro_pages.dfs_tab("nba", ctx, date_str)
+    pro_pages.parlay_tab("nba")
 with tabs[4]:
+    pro_pages.dfs_tab("nba", ctx, date_str)
+with tabs[5]:
     ui.ratings_table(ctx["ratings"], uses_poss=True)
     if ctx["team_adj"]:
         st.caption("Injury adjustments today (points): " +

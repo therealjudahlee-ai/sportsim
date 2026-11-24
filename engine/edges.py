@@ -89,3 +89,65 @@ def build_parlays(legs: pd.DataFrame, sport: str, n_legs: int = 3, max_tickets: 
         if len(picked) >= max_tickets:
             break
     return picked
+
+
+# ----------------------------------------------------------------------------
+# 2x-3x value finder
+# ----------------------------------------------------------------------------
+def hit_rate(hist, line: float, n: int) -> float:
+    h = [x for x in (hist or []) if x is not None and np.isfinite(x)][-n:]
+    return float(np.mean([x > line for x in h])) if len(h) >= min(n, 5) else np.nan
+
+
+def value_finder(projections: list[dict], ladder: pd.DataFrame, min_payout: float = 2.0, max_payout: float = 3.0,
+                 sides: tuple = ("over",)) -> pd.DataFrame:
+    """Real alt-line rungs priced between min_payout and max_payout (decimal, i.e. 2x = +100, 3x = +200),
+    scored by the model. EV is at the actual best price, so it already accounts for the book's cut."""
+    if ladder is None or ladder.empty or not projections:
+        return pd.DataFrame()
+    proj_idx = {(p["player_norm"], p["stat"]): p for p in projections}
+    lad = ladder.copy()
+    lad["payout"] = lad["price"].map(american_to_decimal)
+    lad = lad[lad["payout"].between(min_payout, max_payout) & lad["side"].isin(sides)]
+    rows = []
+    for _, r in lad.iterrows():
+        p = proj_idx.get((r["player_norm"], r["stat"]))
+        if p is None:
+            continue
+        d = p["dist"]
+        prob = d.prob_over(r["line"]) if r["side"] == "over" else d.prob_under(r["line"])
+        implied = 1.0 / r["payout"]
+        rows.append({
+            "player": p["player"], "position": p.get("position", ""), "team": p["team"], "opp": p.get("opp", ""),
+            "game": p["game"], "stat": r["stat"], "side": r["side"], "line": r["line"],
+            "price": r["price"], "payout": r["payout"], "book": r["book"], "n_books": r["n_books"],
+            "proj_median": p["median"], "prob": prob, "implied": implied, "edge": prob - implied,
+            "ev": prob * r["payout"] - 1.0, "fair_payout": fair_decimal(prob),
+            "hit_l10": hit_rate(p.get("hist"), r["line"], 10), "hit_l20": hit_rate(p.get("hist"), r["line"], 20),
+            "notes": "; ".join(p.get("notes", [])),
+        })
+    out = pd.DataFrame(rows)
+    return out.sort_values("ev", ascending=False).reset_index(drop=True) if not out.empty else out
+
+
+def fair_ladder(projections: list[dict], payouts=(2.0, 2.5, 3.0)) -> pd.DataFrame:
+    """No odds key: for each player, the highest half-point line the model says is worth
+    taking at each payout (P(over) >= 1/payout). Compare these to what your app/book offers."""
+    rows = []
+    for p in projections:
+        d = p["dist"]
+        r = {"player": p["player"], "team": p["team"], "opp": p.get("opp", ""), "game": p["game"],
+             "stat": p["stat"], "proj_median": p["median"]}
+        for m in payouts:
+            target = 1.0 / m
+            q = d.quantile(1.0 - target)              # line where P(over) ~= 1/m
+            line = np.floor(q) - 0.5 if np.floor(q) + 0.5 > q else np.floor(q) + 0.5
+            while d.prob_over(line + 1.0) >= target:  # step up while still worth it
+                line += 1.0
+            while line > 0 and d.prob_over(line) < target:
+                line -= 1.0
+            r[f"line_{m:g}x"] = line
+            r[f"prob_{m:g}x"] = d.prob_over(line)
+            r[f"hit_l10_{m:g}x"] = hit_rate(p.get("hist"), line, 10)
+        rows.append(r)
+    return pd.DataFrame(rows)
