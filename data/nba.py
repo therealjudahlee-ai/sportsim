@@ -7,7 +7,7 @@ import pandas as pd
 from engine.common import Diagnostics, norm_name
 from engine.config import INJURY, get_config
 from engine.gamesim import predict_slate
-from engine.props import NBA_PROP_STATS, project_nba, shrink_matchup
+from engine.props import NBA_PROP_STATS, market_offered, project_nba, shrink_matchup
 from engine.ratings import RatingsModel
 
 from . import espn
@@ -259,17 +259,19 @@ def project_player(ctx: dict, player_id, stat: str, bump: float = 1.0) -> dict |
                 "position": last.get("POS", ""), "team": team, "opp": gi.get("opp", ""), "game": gi.get("game", ""),
                 "stat": stat, "def_mult": dm, "status": status_row.iloc[0]["status"] if not status_row.empty else "",
                 "hist": logs[stat].tail(20).tolist()})
+    res["offered"] = market_offered("nba", stat, res)
     return res
 
 
-def all_projections(ctx: dict, stats: list[str]) -> list[dict]:
+def all_projections(ctx: dict, stats: list[str], markets_only: bool = True) -> list[dict]:
+    """markets_only: drop player/stat combos books don't realistically post (see engine.props.MARKET_MIN)."""
     out = []
     for _, p in ctx["players"].iterrows():
         if p["status"] and espn.status_weight(p["status"]) >= 0.75:
             continue
         for s in stats:
             r = project_player(ctx, p["player_id"], s)
-            if r:
+            if r and (r["offered"] or not markets_only):
                 out.append(r)
     return out
 

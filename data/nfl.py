@@ -7,7 +7,7 @@ import pandas as pd
 from engine.common import Diagnostics, norm_name, now_et
 from engine.config import INJURY, NFL_WIND_MPH, NFL_WIND_TOTAL_MULT, get_config
 from engine.gamesim import predict_slate
-from engine.props import NFL_VOLUME, nfl_env_factors, project_nfl, shrink_matchup
+from engine.props import NFL_VOLUME, market_offered, nfl_env_factors, project_nfl, shrink_matchup
 from engine.ratings import RatingsModel
 
 from . import espn
@@ -290,10 +290,12 @@ def project_player(ctx: dict, player_id, stat: str, bump: float = 1.0, opp: str 
                 "position": row["position"], "team": row["team"], "opp": opp or "",
                 "game": gi.get("game", ""), "stat": stat, "def_mult": dm, "status": row.get("status", ""),
                 "hist": logs[stat].tail(20).tolist() if stat in logs.columns else []})
+    res["offered"] = market_offered("nfl", stat, res, row["position"])
     return res
 
 
-def all_projections(ctx: dict, stats: list[str], include_out: bool = False) -> list[dict]:
+def all_projections(ctx: dict, stats: list[str], include_out: bool = False, markets_only: bool = True) -> list[dict]:
+    """markets_only: drop player/stat combos books don't realistically post (see engine.props.MARKET_MIN)."""
     pos_stats = {"QB": {"passing_yards", "rushing_yards", "passing_tds", "anytime_td", "dk_points", "fd_points"},
                  "RB": {"rushing_yards", "receiving_yards", "receptions", "anytime_td", "dk_points", "fd_points"},
                  "WR": {"receiving_yards", "receptions", "anytime_td", "dk_points", "fd_points", "rushing_yards"},
@@ -305,7 +307,7 @@ def all_projections(ctx: dict, stats: list[str], include_out: bool = False) -> l
         for s in stats:
             if s in pos_stats.get(p["position"], set()):
                 r = project_player(ctx, p["player_id"], s)
-                if r:
+                if r and (r["offered"] or not markets_only):
                     out.append(r)
     return out
 

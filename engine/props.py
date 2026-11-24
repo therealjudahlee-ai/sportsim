@@ -287,3 +287,42 @@ def parlay_prob(legs: list[dict], sport: str, n: int = 200_000, seed: int = 7) -
     z = np.random.default_rng(seed).multivariate_normal(np.zeros(k), R, size=n, method="cholesky")
     thresh = st.norm.ppf([l["prob"] for l in legs])
     return float(np.mean(np.all(z < thresh, axis=1)))
+
+
+# ----------------------------------------------------------------------------
+# Which props actually exist? Books only hang a line when a player gets real
+# volume in that stat (nobody posts Jared Goff over 1.5 rushing yards). These
+# are the smallest projected MEANS at which lines are commonly offered.
+# Stats not listed (DK/FD fantasy points) are always allowed.
+# ----------------------------------------------------------------------------
+MARKET_MIN = {
+    "nfl": {
+        "passing_yards": 150.0,   # starting QBs only
+        "passing_tds": 0.8,
+        "rushing_yards": 12.0,    # RBs + genuinely mobile QBs (Allen, Hurts, Jackson…)
+        "receiving_yards": 12.0,
+        "receptions": 1.8,
+        "anytime_td": 0.08,       # expected TDs (~8% chance) — long shots still get priced
+    },
+    "nba": {
+        "PTS": 7.0, "REB": 3.0, "AST": 2.0, "FG3M": 0.8, "PRA": 12.0, "PR": 10.0, "PA": 9.0,
+        "RA": 5.0, "STL": 0.7, "BLK": 0.6,
+    },
+}
+# position gates on top of the volume floors
+NFL_POS_MARKETS = {
+    "QB": {"passing_yards", "passing_tds", "rushing_yards", "anytime_td"},
+    "RB": {"rushing_yards", "receiving_yards", "receptions", "anytime_td"},
+    "WR": {"receiving_yards", "receptions", "anytime_td", "rushing_yards"},
+    "TE": {"receiving_yards", "receptions", "anytime_td"},
+}
+
+
+def market_offered(sport: str, stat: str, proj: dict | None, position: str | None = None) -> bool:
+    if proj is None:
+        return False
+    if sport == "nfl" and position in NFL_POS_MARKETS and stat in MARKET_MIN["nfl"] \
+            and stat not in NFL_POS_MARKETS[position]:
+        return False
+    floor = MARKET_MIN.get(sport, {}).get(stat)
+    return floor is None or proj["mean"] >= floor

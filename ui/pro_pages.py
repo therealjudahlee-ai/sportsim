@@ -57,8 +57,13 @@ def props_tab(sport: str, ctx: dict, date_str: str = ""):
     who = c1.selectbox("Player", list(labels), key=f"{sport}_prop_player")
     pid = labels[who]
     prow = players[players["player_id"] == pid].iloc[0]
-    stats = NFL_STATS_BY_POS.get(prow.get("position"), NFL_MARKET_STATS) if sport == "nfl" else NBA_PROP_STATS
-    stat = c2.selectbox("Stat", stats, format_func=lambda s: LABELS.get(s, s), key=f"{sport}_prop_stat")
+    all_stats = NFL_STATS_BY_POS.get(prow.get("position"), NFL_MARKET_STATS) if sport == "nfl" else NBA_PROP_STATS
+    stats = [s for s in all_stats if (_p := mod.project_player(ctx, pid, s)) is not None and _p["offered"]]
+    if not stats:
+        st.info("This player doesn't get enough volume for books to post props on him.")
+        return
+    stat = c2.selectbox("Stat", stats, format_func=lambda s: LABELS.get(s, s), key=f"{sport}_prop_stat",
+                        help="Only stats sportsbooks realistically post for this player are listed.")
     bump = c3.slider("Usage adjust", 0.80, 1.25, 1.00, 0.01, key=f"{sport}_prop_bump",
                      help="Manual multiplier — e.g. 1.08 if a teammate was just ruled out and the injury "
                           "feed hasn't caught it yet.")

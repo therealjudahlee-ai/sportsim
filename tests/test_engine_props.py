@@ -134,3 +134,16 @@ def test_alt_ladder_parsing():
     df = alt_ladder(c, "basketball_nba", "e1", ["PTS"], NBA_ALT_MARKETS)
     r = df[df["line"] == 29.5].iloc[0]
     assert r["price"] == 155 and r["book"] == "B" and r["n_books"] == 2 and len(df) == 2
+
+
+def test_realistic_markets():
+    from engine.props import market_offered
+    mean = lambda m: {"mean": m}
+    assert not market_offered("nfl", "rushing_yards", mean(2.1), "QB")      # pocket passer: no market
+    assert market_offered("nfl", "rushing_yards", mean(38.0), "QB")         # mobile QB: real market
+    assert not market_offered("nfl", "passing_yards", mean(240.0), "WR")    # position gate
+    assert not market_offered("nfl", "receptions", mean(0.9), "RB")         # barely used back
+    assert market_offered("nfl", "dk_points", mean(3.0), "WR")              # DFS stats always allowed
+    assert not market_offered("nba", "BLK", mean(0.2))
+    assert market_offered("nba", "PTS", mean(18.0))
+    assert not market_offered("nfl", "anytime_td", None, "RB")
