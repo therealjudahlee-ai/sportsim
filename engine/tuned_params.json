@@ -1,10 +1,11 @@
 {
   "nfl": {
-    "half_life_days": 60.0,
-    "ridge_alpha": 3.0,
+    "half_life_days": 120.0,
+    "ridge_alpha": 6.0,
     "prior_regress": 0.35000000000000003,
-    "margin_sigma": 13.241061804726831,
-    "total_sigma": 13.43621649897017
+    "margin_sigma": 13.208786682138486,
+    "total_sigma": 13.306078554781505,
+    "epa_weight": 0.3
   },
   "nba": {
     "half_life_days": 45.0,
@@ -14,17 +15,17 @@
     "total_sigma": 18.694984094443
   },
   "ncaab": {
-    "half_life_days": 80.0,
+    "half_life_days": 1280.0,
     "ridge_alpha": 2.5,
-    "prior_regress": 0.75,
-    "margin_sigma": 12.028896294711641,
-    "total_sigma": 17.01887114253422
+    "prior_regress": 0.95,
+    "margin_sigma": 11.840907686178399,
+    "total_sigma": 17.13142214747547
   },
   "ncaaf": {
-    "half_life_days": 180.0,
+    "half_life_days": 90.0,
     "ridge_alpha": 2.0,
-    "prior_regress": 0.75,
-    "margin_sigma": 15.438043629465085,
-    "total_sigma": 16.613154777712495
+    "prior_regress": 0.9,
+    "margin_sigma": 15.427632707065943,
+    "total_sigma": 16.581340695063833
   }
 }
