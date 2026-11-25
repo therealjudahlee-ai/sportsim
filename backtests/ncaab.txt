@@ -1,74 +1,58 @@
 INFO sportsim: CBB history: 18825 games across seasons [2024, 2025, 2026]
 ncaab: 18825 games loaded; evaluating seasons [2025, 2026]
-  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 1.25, 'prior_regress': 0.55} -> margin RMSE 12.257  (4s)
-  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 1.25, 'prior_regress': 0.75} -> margin RMSE 12.135  (9s)
-  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 1.25, 'prior_regress': 0.9} -> margin RMSE 12.058  (14s)
-  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 2.5, 'prior_regress': 0.55} -> margin RMSE 12.403  (18s)
-  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 2.5, 'prior_regress': 0.75} -> margin RMSE 12.265  (24s)
-  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 2.5, 'prior_regress': 0.9} -> margin RMSE 12.177  (29s)
-  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 5.0, 'prior_regress': 0.55} -> margin RMSE 12.722  (33s)
-  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 5.0, 'prior_regress': 0.75} -> margin RMSE 12.579  (38s)
-  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 5.0, 'prior_regress': 0.9} -> margin RMSE 12.487  (42s)
-  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 1.25, 'prior_regress': 0.55} -> margin RMSE 12.137  (47s)
-  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 1.25, 'prior_regress': 0.75} -> margin RMSE 12.011  (52s)
-  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 1.25, 'prior_regress': 0.9} -> margin RMSE 11.940  (56s)
-  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 2.5, 'prior_regress': 0.55} -> margin RMSE 12.208  (61s)
-  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 2.5, 'prior_regress': 0.75} -> margin RMSE 12.053  (65s)
-  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 2.5, 'prior_regress': 0.9} -> margin RMSE 11.960  (70s)
-  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 5.0, 'prior_regress': 0.55} -> margin RMSE 12.452  (74s)
-  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 5.0, 'prior_regress': 0.75} -> margin RMSE 12.269  (79s)
-  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 5.0, 'prior_regress': 0.9} -> margin RMSE 12.157  (85s)
-  [round 1] {'half_life_days': 160.0, 'ridge_alpha': 1.25, 'prior_regress': 0.55} -> margin RMSE 12.109  (89s)
-  [round 1] {'half_life_days': 160.0, 'ridge_alpha': 1.25, 'prior_regress': 0.75} -> margin RMSE 11.986  (94s)
-  [round 1] {'half_life_days': 160.0, 'ridge_alpha': 1.25, 'prior_regress': 0.9} -> margin RMSE 11.921  (98s)
-  [round 1] {'half_life_days': 160.0, 'ridge_alpha': 2.5, 'prior_regress': 0.55} -> margin RMSE 12.140  (103s)
-  [round 1] {'half_life_days': 160.0, 'ridge_alpha': 2.5, 'prior_regress': 0.75} -> margin RMSE 11.985  (107s)
-  [round 1] {'half_life_days': 160.0, 'ridge_alpha': 2.5, 'prior_regress': 0.9} -> margin RMSE 11.898  (112s)
-  [round 1] {'half_life_days': 160.0, 'ridge_alpha': 5.0, 'prior_regress': 0.55} -> margin RMSE 12.327  (116s)
-  [round 1] {'half_life_days': 160.0, 'ridge_alpha': 5.0, 'prior_regress': 0.75} -> margin RMSE 12.133  (121s)
-  [round 1] {'half_life_days': 160.0, 'ridge_alpha': 5.0, 'prior_regress': 0.9} -> margin RMSE 12.019  (126s)
-  best was on the edge of the range; searching further: {'half_life_days': [160.0, 320.0], 'ridge_alpha': [2.5], 'prior_regress': [0.9, 0.95]}
-  [round 2] {'half_life_days': 160.0, 'ridge_alpha': 2.5, 'prior_regress': 0.95} -> margin RMSE 11.876  (130s)
-  [round 2] {'half_life_days': 320.0, 'ridge_alpha': 2.5, 'prior_regress': 0.9} -> margin RMSE 11.880  (135s)
-  [round 2] {'half_life_days': 320.0, 'ridge_alpha': 2.5, 'prior_regress': 0.95} -> margin RMSE 11.860  (139s)
-  best was on the edge of the range; searching further: {'half_life_days': [320.0, 640.0], 'ridge_alpha': [2.5, 5.0], 'prior_regress': [0.95]}
-  [round 3] {'half_life_days': 320.0, 'ridge_alpha': 5.0, 'prior_regress': 0.95} -> margin RMSE 11.937  (145s)
-  [round 3] {'half_life_days': 640.0, 'ridge_alpha': 2.5, 'prior_regress': 0.95} -> margin RMSE 11.855  (150s)
-  [round 3] {'half_life_days': 640.0, 'ridge_alpha': 5.0, 'prior_regress': 0.95} -> margin RMSE 11.916  (154s)
-  best was on the edge of the range; searching further: {'half_life_days': [640.0, 1280.0], 'ridge_alpha': [1.25, 2.5], 'prior_regress': [0.8, 0.95]}
-  [round 4] {'half_life_days': 640.0, 'ridge_alpha': 1.25, 'prior_regress': 0.8} -> margin RMSE 11.961  (159s)
-  [round 4] {'half_life_days': 640.0, 'ridge_alpha': 1.25, 'prior_regress': 0.95} -> margin RMSE 11.909  (163s)
-  [round 4] {'half_life_days': 640.0, 'ridge_alpha': 2.5, 'prior_regress': 0.8} -> margin RMSE 11.925  (168s)
-  [round 4] {'half_life_days': 1280.0, 'ridge_alpha': 1.25, 'prior_regress': 0.8} -> margin RMSE 11.962  (172s)
-  [round 4] {'half_life_days': 1280.0, 'ridge_alpha': 1.25, 'prior_regress': 0.95} -> margin RMSE 11.911  (177s)
-  [round 4] {'half_life_days': 1280.0, 'ridge_alpha': 2.5, 'prior_regress': 0.8} -> margin RMSE 11.923  (181s)
-  [round 4] {'half_life_days': 1280.0, 'ridge_alpha': 2.5, 'prior_regress': 0.95} -> margin RMSE 11.853  (186s)
-  best was on the edge of the range; searching further: {'half_life_days': [1280.0], 'ridge_alpha': [2.5, 5.0], 'prior_regress': [0.95]}
+  [round 1] {'half_life_days': 640.0, 'ridge_alpha': 1.25, 'prior_regress': 0.75} -> margin RMSE 11.984  (2s)
+  [round 1] {'half_life_days': 640.0, 'ridge_alpha': 1.25, 'prior_regress': 0.95} -> margin RMSE 11.909  (4s)
+  [round 1] {'half_life_days': 640.0, 'ridge_alpha': 1.25, 'prior_regress': 1.0} -> margin RMSE 11.899  (6s)
+  [round 1] {'half_life_days': 640.0, 'ridge_alpha': 2.5, 'prior_regress': 0.75} -> margin RMSE 11.956  (8s)
+  [round 1] {'half_life_days': 640.0, 'ridge_alpha': 2.5, 'prior_regress': 0.95} -> margin RMSE 11.855  (11s)
+  [round 1] {'half_life_days': 640.0, 'ridge_alpha': 2.5, 'prior_regress': 1.0} -> margin RMSE 11.839  (13s)
+  [round 1] {'half_life_days': 640.0, 'ridge_alpha': 5.0, 'prior_regress': 0.75} -> margin RMSE 12.053  (15s)
+  [round 1] {'half_life_days': 640.0, 'ridge_alpha': 5.0, 'prior_regress': 0.95} -> margin RMSE 11.916  (17s)
+  [round 1] {'half_life_days': 640.0, 'ridge_alpha': 5.0, 'prior_regress': 1.0} -> margin RMSE 11.893  (19s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 1.25, 'prior_regress': 0.75} -> margin RMSE 11.985  (21s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 1.25, 'prior_regress': 0.95} -> margin RMSE 11.911  (24s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 1.25, 'prior_regress': 1.0} -> margin RMSE 11.901  (26s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 2.5, 'prior_regress': 0.75} -> margin RMSE 11.953  (28s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 2.5, 'prior_regress': 0.95} -> margin RMSE 11.853  (30s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 2.5, 'prior_regress': 1.0} -> margin RMSE 11.838  (32s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 5.0, 'prior_regress': 0.75} -> margin RMSE 12.042  (34s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 5.0, 'prior_regress': 0.95} -> margin RMSE 11.906  (36s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 5.0, 'prior_regress': 1.0} -> margin RMSE 11.884  (38s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 1.25, 'prior_regress': 0.75} -> margin RMSE 11.985  (40s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 1.25, 'prior_regress': 0.95} -> margin RMSE 11.912  (42s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 1.25, 'prior_regress': 1.0} -> margin RMSE 11.902  (45s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 2.5, 'prior_regress': 0.75} -> margin RMSE 11.951  (47s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 2.5, 'prior_regress': 0.95} -> margin RMSE 11.853  (49s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 2.5, 'prior_regress': 1.0} -> margin RMSE 11.838  (51s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 5.0, 'prior_regress': 0.75} -> margin RMSE 12.037  (53s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 5.0, 'prior_regress': 0.95} -> margin RMSE 11.902  (55s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 5.0, 'prior_regress': 1.0} -> margin RMSE 11.880  (57s)
+  best setting is inside the search range after round 1
 
 Top settings:
   half_life_days  ridge_alpha  prior_regress  margin_rmse     n
-         1280.0         2.50           0.95    11.853336 10487
-          640.0         2.50           0.95    11.854873 10487
-          320.0         2.50           0.95    11.859544 10487
-          160.0         2.50           0.95    11.875552 10487
-          320.0         2.50           0.90    11.880105 10487
-          160.0         2.50           0.90    11.897720 10487
-          640.0         1.25           0.95    11.909394 10487
-         1280.0         1.25           0.95    11.911273 10487
+         2560.0          2.5           1.00    11.837617 10487
+         1280.0          2.5           1.00    11.837980 10487
+          640.0          2.5           1.00    11.839090 10487
+         2560.0          2.5           0.95    11.852762 10487
+         1280.0          2.5           0.95    11.853336 10487
+          640.0          2.5           0.95    11.854873 10487
+         2560.0          5.0           1.00    11.879502 10487
+         1280.0          5.0           1.00    11.883675 10487
 
 Saved tuned params for ncaab: {
-  "half_life_days": 1280.0,
+  "half_life_days": 2560.0,
   "ridge_alpha": 2.5,
-  "prior_regress": 0.95,
-  "margin_sigma": 11.840907686178399,
-  "total_sigma": 17.13142214747547
+  "prior_regress": 1.0,
+  "margin_sigma": 11.826589257662262,
+  "total_sigma": 17.14431683591003
 }
 
 Backtest results:
   n                                10487
-  margin_mae                       9.3256
-  margin_rmse                      11.8533
-  total_rmse                       17.1536
-  su_accuracy                      0.7147
-  brier                            0.1848
-  logloss                          0.5438
+  margin_mae                       9.3175
+  margin_rmse                      11.8376
+  total_rmse                       17.1667
+  su_accuracy                      0.7143
+  brier                            0.1847
+  logloss                          0.5436
