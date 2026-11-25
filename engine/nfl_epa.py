@@ -34,9 +34,17 @@ QB_OUT_CAP = 9.0             # max points for any single QB absence
 def load_pbp_lean(nfl_module, seasons: list[int]) -> pd.DataFrame:
     """Load play-by-play one season at a time, keeping only the needed columns
     (full pbp is ~370 columns; this keeps peak memory low enough for Streamlit Cloud)."""
+    import time
     frames = []
     for s in seasons:
-        raw = nfl_module.load_pbp([s])
+        for attempt in range(3):          # nflverse files can 404 briefly while being re-uploaded
+            try:
+                raw = nfl_module.load_pbp([s])
+                break
+            except Exception:
+                if attempt == 2:
+                    raise
+                time.sleep(20)
         frames.append(raw.select([c for c in PBP_COLS if c in raw.columns]).to_pandas())
         del raw
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=PBP_COLS)

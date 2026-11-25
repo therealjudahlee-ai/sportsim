@@ -25,8 +25,36 @@ def _col(df, name):
     return df[name] if name in df.columns else pd.Series(np.nan, index=df.index)
 
 
+NFLDATA_GAMES_CSV = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
+
+
+def _retry(fn, what: str, diag: Diagnostics, tries: int = 3, wait: float = 20.0):
+    """nflverse re-uploads its release files several times a day; for a minute or two a file can 404.
+    Retry before giving up."""
+    import time
+    last = None
+    for i in range(tries):
+        try:
+            return fn()
+        except Exception as e:  # noqa: BLE001
+            last = e
+            if i < tries - 1:
+                diag.note(f"{what} failed ({type(e).__name__}); retrying in {wait:.0f}s")
+                time.sleep(wait)
+    raise last
+
+
+def _load_schedules(seasons: list[int], diag: Diagnostics) -> pd.DataFrame:
+    try:
+        return _retry(lambda: _nfl().load_schedules(seasons).to_pandas(), "nflverse schedules", diag)
+    except Exception as e:
+        diag.warn("nflverse schedules release unavailable; using the nfldata games.csv mirror", e)
+        df = pd.read_csv(NFLDATA_GAMES_CSV)
+        return df[df["season"].isin(seasons)].copy()
+
+
 def load_games(seasons: list[int], diag: Diagnostics) -> pd.DataFrame:
-    sched = _nfl().load_schedules(seasons).to_pandas()
+    sched = _load_schedules(seasons, diag)
     sched = sched[sched["game_type"] != "PRE"] if "game_type" in sched.columns else sched
     g = pd.DataFrame({
         "game_id": sched["game_id"].astype(str),
@@ -81,7 +109,7 @@ def build_context(diag: Diagnostics | None = None) -> dict:
     games = load_games(seasons, diag)
 
     # ---------------- player logs
-    ps = nfl.load_player_stats(seasons).to_pandas()
+    ps = _retry(lambda: nfl.load_player_stats(seasons).to_pandas(), "nflverse player stats", diag)
     reg = ps[ps["season_type"] == "REG"].copy()
     team_col = "team" if "team" in reg.columns else "recent_team"
     reg = reg.rename(columns={team_col: "team"})

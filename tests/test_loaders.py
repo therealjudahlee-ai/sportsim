@@ -138,3 +138,23 @@ def test_nba_overrides(monkeypatch):
     new = nba.apply_overrides(ctx, {star["name_norm"]: (star["name"], "out"), "p1 star": ("P1 Star", "active")})
     assert new["team_adj"].get("NYK", 0) < 0 and "BOS" not in new["team_adj"]
     assert new["predictions"].iloc[0]["model_margin"] > ctx["predictions"].iloc[0]["model_margin"]
+
+
+def test_nfl_schedule_fallback(monkeypatch):
+    mod = fakes.fake_nflreadpy()
+    good = mod.load_schedules([2025, 2026]).to_pandas()
+    calls = {"n": 0}
+    def broken(seasons):
+        calls["n"] += 1
+        raise ConnectionError("404 Not Found: schedules/games.parquet")
+    mod.load_schedules = broken
+    monkeypatch.setitem(sys.modules, "nflreadpy", mod)
+    from data import nfl
+    from engine.common import Diagnostics
+    import time as _time
+    monkeypatch.setattr(_time, "sleep", lambda s: None)
+    monkeypatch.setattr(pd, "read_csv", lambda url: good if "nfldata" in url else None)
+    d = Diagnostics()
+    g = nfl.load_games([2025, 2026], d)
+    assert calls["n"] == 3 and len(g) == len(good)
+    assert any("mirror" in w for w in d.warnings)
