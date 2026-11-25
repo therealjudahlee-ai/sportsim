@@ -1,0 +1,49 @@
+INFO sportsim: CBB history: 18825 games across seasons [2024, 2025, 2026]
+ncaab: 18825 games loaded; evaluating seasons [2025, 2026]
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 1.25, 'prior_regress': 0.8} -> margin RMSE 11.962  (4s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 1.25, 'prior_regress': 1.0} -> margin RMSE 11.901  (9s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 2.5, 'prior_regress': 0.8} -> margin RMSE 11.923  (14s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 2.5, 'prior_regress': 1.0} -> margin RMSE 11.838  (19s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 5.0, 'prior_regress': 0.8} -> margin RMSE 12.002  (23s)
+  [round 1] {'half_life_days': 1280.0, 'ridge_alpha': 5.0, 'prior_regress': 1.0} -> margin RMSE 11.884  (28s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 1.25, 'prior_regress': 0.8} -> margin RMSE 11.963  (32s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 1.25, 'prior_regress': 1.0} -> margin RMSE 11.902  (36s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 2.5, 'prior_regress': 0.8} -> margin RMSE 11.921  (41s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 2.5, 'prior_regress': 1.0} -> margin RMSE 11.838  (45s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 5.0, 'prior_regress': 0.8} -> margin RMSE 11.997  (50s)
+  [round 1] {'half_life_days': 2560.0, 'ridge_alpha': 5.0, 'prior_regress': 1.0} -> margin RMSE 11.880  (54s)
+  [round 1] {'half_life_days': 5120.0, 'ridge_alpha': 1.25, 'prior_regress': 0.8} -> margin RMSE 11.963  (59s)
+  [round 1] {'half_life_days': 5120.0, 'ridge_alpha': 1.25, 'prior_regress': 1.0} -> margin RMSE 11.903  (63s)
+  [round 1] {'half_life_days': 5120.0, 'ridge_alpha': 2.5, 'prior_regress': 0.8} -> margin RMSE 11.921  (68s)
+  [round 1] {'half_life_days': 5120.0, 'ridge_alpha': 2.5, 'prior_regress': 1.0} -> margin RMSE 11.837  (72s)
+  [round 1] {'half_life_days': 5120.0, 'ridge_alpha': 5.0, 'prior_regress': 0.8} -> margin RMSE 11.995  (78s)
+  [round 1] {'half_life_days': 5120.0, 'ridge_alpha': 5.0, 'prior_regress': 1.0} -> margin RMSE 11.877  (82s)
+  best setting is inside the search range after round 1
+
+Top settings:
+  half_life_days  ridge_alpha  prior_regress  margin_rmse     n
+         5120.0         2.50            1.0    11.837483 10487
+         2560.0         2.50            1.0    11.837617 10487
+         1280.0         2.50            1.0    11.837980 10487
+         5120.0         5.00            1.0    11.877491 10487
+         2560.0         5.00            1.0    11.879502 10487
+         1280.0         5.00            1.0    11.883675 10487
+         1280.0         1.25            1.0    11.900758 10487
+         2560.0         1.25            1.0    11.901953 10487
+
+Saved tuned params for ncaab: {
+  "half_life_days": 5120.0,
+  "ridge_alpha": 2.5,
+  "prior_regress": 1.0,
+  "margin_sigma": 11.826502355099452,
+  "total_sigma": 17.146337887888983
+}
+
+Backtest results:
+  n                                10487
+  margin_mae                       9.3177
+  margin_rmse                      11.8375
+  total_rmse                       17.1688
+  su_accuracy                      0.7144
+  brier                            0.1847
+  logloss                          0.5436
