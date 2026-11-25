@@ -1,135 +1,32 @@
-INFO sportsim: NFL schedule: 855 games, 855 completed
-nfl: 855 games loaded; evaluating seasons [2024, 2025]
-nfl: play-by-play for 855 games
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 3.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.3} -> margin RMSE 13.227  (1s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 3.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.6} -> margin RMSE 13.285  (1s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 3.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.9} -> margin RMSE 13.419  (2s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.3} -> margin RMSE 13.217  (3s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.6} -> margin RMSE 13.282  (3s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.9} -> margin RMSE 13.424  (4s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 3.0, 'prior_regress': 0.5, 'epa_weight': 0.3} -> margin RMSE 13.227  (5s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 3.0, 'prior_regress': 0.5, 'epa_weight': 0.6} -> margin RMSE 13.299  (5s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 3.0, 'prior_regress': 0.5, 'epa_weight': 0.9} -> margin RMSE 13.448  (6s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 6.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.3} -> margin RMSE 13.261  (7s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 6.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.6} -> margin RMSE 13.269  (7s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 6.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.9} -> margin RMSE 13.327  (8s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.3} -> margin RMSE 13.231  (9s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.6} -> margin RMSE 13.245  (9s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.9} -> margin RMSE 13.309  (10s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 6.0, 'prior_regress': 0.5, 'epa_weight': 0.3} -> margin RMSE 13.225  (11s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 6.0, 'prior_regress': 0.5, 'epa_weight': 0.6} -> margin RMSE 13.245  (11s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 6.0, 'prior_regress': 0.5, 'epa_weight': 0.9} -> margin RMSE 13.316  (12s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 12.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.3} -> margin RMSE 13.495  (13s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 12.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.6} -> margin RMSE 13.486  (13s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 12.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.9} -> margin RMSE 13.509  (14s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.3} -> margin RMSE 13.451  (14s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.6} -> margin RMSE 13.445  (15s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.9} -> margin RMSE 13.471  (16s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 12.0, 'prior_regress': 0.5, 'epa_weight': 0.3} -> margin RMSE 13.428  (16s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 12.0, 'prior_regress': 0.5, 'epa_weight': 0.6} -> margin RMSE 13.426  (17s)
-  [round 1] {'half_life_days': 60.0, 'ridge_alpha': 12.0, 'prior_regress': 0.5, 'epa_weight': 0.9} -> margin RMSE 13.456  (18s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 3.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.3} -> margin RMSE 13.254  (18s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 3.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.6} -> margin RMSE 13.333  (19s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 3.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.9} -> margin RMSE 13.494  (20s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.3} -> margin RMSE 13.251  (20s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.6} -> margin RMSE 13.339  (21s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.9} -> margin RMSE 13.509  (22s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 3.0, 'prior_regress': 0.5, 'epa_weight': 0.3} -> margin RMSE 13.267  (22s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 3.0, 'prior_regress': 0.5, 'epa_weight': 0.6} -> margin RMSE 13.364  (23s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 3.0, 'prior_regress': 0.5, 'epa_weight': 0.9} -> margin RMSE 13.544  (24s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.3} -> margin RMSE 13.234  (24s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.6} -> margin RMSE 13.255  (25s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.9} -> margin RMSE 13.331  (26s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.3} -> margin RMSE 13.211  (26s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.6} -> margin RMSE 13.241  (27s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.9} -> margin RMSE 13.325  (28s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.5, 'epa_weight': 0.3} -> margin RMSE 13.215  (28s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.5, 'epa_weight': 0.6} -> margin RMSE 13.253  (29s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.5, 'epa_weight': 0.9} -> margin RMSE 13.347  (30s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 12.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.3} -> margin RMSE 13.416  (30s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 12.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.6} -> margin RMSE 13.410  (31s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 12.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.9} -> margin RMSE 13.438  (32s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.3} -> margin RMSE 13.372  (32s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.6} -> margin RMSE 13.372  (33s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.9} -> margin RMSE 13.407  (34s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 12.0, 'prior_regress': 0.5, 'epa_weight': 0.3} -> margin RMSE 13.356  (34s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 12.0, 'prior_regress': 0.5, 'epa_weight': 0.6} -> margin RMSE 13.362  (35s)
-  [round 1] {'half_life_days': 120.0, 'ridge_alpha': 12.0, 'prior_regress': 0.5, 'epa_weight': 0.9} -> margin RMSE 13.404  (36s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 3.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.3} -> margin RMSE 13.280  (36s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 3.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.6} -> margin RMSE 13.372  (37s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 3.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.9} -> margin RMSE 13.549  (38s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.3} -> margin RMSE 13.281  (38s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.6} -> margin RMSE 13.383  (39s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.9} -> margin RMSE 13.570  (40s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 3.0, 'prior_regress': 0.5, 'epa_weight': 0.3} -> margin RMSE 13.300  (40s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 3.0, 'prior_regress': 0.5, 'epa_weight': 0.6} -> margin RMSE 13.412  (41s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 3.0, 'prior_regress': 0.5, 'epa_weight': 0.9} -> margin RMSE 13.610  (42s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 6.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.3} -> margin RMSE 13.233  (42s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 6.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.6} -> margin RMSE 13.264  (43s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 6.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.9} -> margin RMSE 13.352  (44s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.3} -> margin RMSE 13.216  (44s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.6} -> margin RMSE 13.256  (45s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.9} -> margin RMSE 13.354  (46s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 6.0, 'prior_regress': 0.5, 'epa_weight': 0.3} -> margin RMSE 13.225  (46s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 6.0, 'prior_regress': 0.5, 'epa_weight': 0.6} -> margin RMSE 13.275  (47s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 6.0, 'prior_regress': 0.5, 'epa_weight': 0.9} -> margin RMSE 13.384  (48s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 12.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.3} -> margin RMSE 13.384  (48s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 12.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.6} -> margin RMSE 13.381  (49s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 12.0, 'prior_regress': 0.15000000000000002, 'epa_weight': 0.9} -> margin RMSE 13.416  (50s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.3} -> margin RMSE 13.343  (50s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.6} -> margin RMSE 13.348  (51s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35000000000000003, 'epa_weight': 0.9} -> margin RMSE 13.390  (52s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 12.0, 'prior_regress': 0.5, 'epa_weight': 0.3} -> margin RMSE 13.333  (52s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 12.0, 'prior_regress': 0.5, 'epa_weight': 0.6} -> margin RMSE 13.345  (53s)
-  [round 1] {'half_life_days': 240.0, 'ridge_alpha': 12.0, 'prior_regress': 0.5, 'epa_weight': 0.9} -> margin RMSE 13.396  (54s)
-  best was on the edge of the range; searching further: {'half_life_days': [120.0], 'ridge_alpha': [6.0], 'prior_regress': [0.35], 'epa_weight': [0.15, 0.3]}
-  [round 2] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35, 'epa_weight': 0.15} -> margin RMSE 13.217  (54s)
-  best was on the edge of the range; searching further: {'half_life_days': [120.0, 240.0], 'ridge_alpha': [6.0, 12.0], 'prior_regress': [0.35], 'epa_weight': [0.3, 0.45]}
-  [round 3] {'half_life_days': 120.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35, 'epa_weight': 0.45} -> margin RMSE 13.219  (55s)
-  [round 3] {'half_life_days': 120.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35, 'epa_weight': 0.45} -> margin RMSE 13.368  (56s)
-  [round 3] {'half_life_days': 240.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35, 'epa_weight': 0.45} -> margin RMSE 13.228  (56s)
-  [round 3] {'half_life_days': 240.0, 'ridge_alpha': 12.0, 'prior_regress': 0.35, 'epa_weight': 0.45} -> margin RMSE 13.341  (57s)
-  best was on the edge of the range; searching further: {'half_life_days': [60.0, 120.0], 'ridge_alpha': [3.0, 6.0], 'prior_regress': [0.35], 'epa_weight': [0.15, 0.3]}
-  [round 4] {'half_life_days': 60.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35, 'epa_weight': 0.15} -> margin RMSE 13.214  (58s)
-  [round 4] {'half_life_days': 60.0, 'ridge_alpha': 6.0, 'prior_regress': 0.35, 'epa_weight': 0.15} -> margin RMSE 13.243  (58s)
-  [round 4] {'half_life_days': 120.0, 'ridge_alpha': 3.0, 'prior_regress': 0.35, 'epa_weight': 0.15} -> margin RMSE 13.238  (59s)
-  best was on the edge of the range; searching further: {'half_life_days': [120.0, 240.0], 'ridge_alpha': [6.0, 12.0], 'prior_regress': [0.35], 'epa_weight': [0.3, 0.45]}
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/nflreadpy/downloader.py", line 67, in _download_file
+    response.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://github.com/nflverse/nflverse-data/releases/download/schedules/games.parquet
 
-Top settings:
-  half_life_days  ridge_alpha  prior_regress  epa_weight  margin_rmse   n
-          120.0          6.0           0.35        0.30    13.211300 540
-           60.0          3.0           0.35        0.15    13.213877 540
-          120.0          6.0           0.50        0.30    13.214832 540
-          240.0          6.0           0.35        0.30    13.215577 540
-           60.0          3.0           0.35        0.30    13.217240 540
-          120.0          6.0           0.35        0.15    13.217469 540
-          120.0          6.0           0.35        0.45    13.219062 540
-          240.0          6.0           0.50        0.30    13.224713 540
+The above exception was the direct cause of the following exception:
 
-Saved tuned params for nfl: {
-  "half_life_days": 120.0,
-  "ridge_alpha": 6.0,
-  "prior_regress": 0.35000000000000003,
-  "epa_weight": 0.3,
-  "margin_sigma": 13.208786682138486,
-  "total_sigma": 13.306078554781505
-}
-
-Score-only model for comparison: margin RMSE 13.2376, ATS 0.4860 over 535 games
-
-Backtest results:
-  n                                540
-  margin_mae                       10.3749
-  margin_rmse                      13.2113
-  total_rmse                       13.3070
-  su_accuracy                      0.6419
-  brier                            0.2209
-  logloss                          0.6332
-  market_margin_rmse               12.5544
-  model_margin_rmse_same_games     13.2113
-  ats_pct                          0.4897
-  ats_n                            535
-  ats_pct_edge2+                   0.4836
-  ats_n_edge2+                     275
-  ats_pct_edge4+                   0.4602
-  ats_n_edge4+                     113
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/sportsim/sportsim/jobs/backtest.py", line 106, in <module>
+    main()
+  File "/home/runner/work/sportsim/sportsim/jobs/backtest.py", line 74, in main
+    games = load_history(a.sport, seasons, diag)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/sportsim/sportsim/jobs/backtest.py", line 27, in load_history
+    return load_games(all_seasons, diag)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/sportsim/sportsim/data/nfl.py", line 29, in load_games
+    sched = _nfl().load_schedules(seasons).to_pandas()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/nflreadpy/load_schedules.py", line 30, in load_schedules
+    df = downloader.download("nflverse-data", "schedules/games")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/nflreadpy/downloader.py", line 121, in download
+    return self._download_file(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/nflreadpy/downloader.py", line 97, in _download_file
+    raise ConnectionError(f"Failed to download {url}: {e}") from e
+ConnectionError: Failed to download https://github.com/nflverse/nflverse-data/releases/download/schedules/games.parquet: 404 Client Error: Not Found for url: https://github.com/nflverse/nflverse-data/releases/download/schedules/games.parquet

@@ -15,11 +15,11 @@
     "total_sigma": 18.694984094443
   },
   "ncaab": {
-    "half_life_days": 2560.0,
+    "half_life_days": 5120.0,
     "ridge_alpha": 2.5,
     "prior_regress": 1.0,
-    "margin_sigma": 11.826589257662262,
-    "total_sigma": 17.14431683591003
+    "margin_sigma": 11.826502355099452,
+    "total_sigma": 17.146337887888983
   },
   "ncaaf": {
     "half_life_days": 90.0,
