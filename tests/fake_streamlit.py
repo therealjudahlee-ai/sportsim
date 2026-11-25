@@ -97,10 +97,12 @@ class _ST(types.ModuleType):
             format_func(options[index])
         return options[index] if options else None
 
-    def multiselect(self, label, options, default=None, format_func=str, **k):
+    def multiselect(self, label, options, default=None, format_func=str, key=None, **k):
         LOG.append(("multiselect", label))
         for o in options:
             format_func(o)
+        if key is not None and key in self.session_state:
+            return list(self.session_state[key])
         return list(default or [])
 
     def radio(self, label, options, format_func=str, **k):

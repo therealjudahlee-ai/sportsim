@@ -3,14 +3,14 @@ import streamlit as st
 from engine.common import today_et
 from engine.config import get_config
 from ui import components as ui
-from ui import loaders, pro_pages
+from ui import loaders, news, pro_pages
 
 st.set_page_config(page_title="NBA · SportSim", page_icon="🏀", layout="wide")
 cfg = get_config("nba")
 
 date_str = st.sidebar.date_input("Slate date", value=today_et(), key="nba_date").isoformat()
 try:
-    ctx = loaders.nba_ctx(date_str)
+    base_ctx = loaders.nba_ctx(date_str)
 except Exception as e:
     st.error(f"Couldn't load NBA data: {type(e).__name__}: {e}")
     if st.button("Retry"):
@@ -18,9 +18,11 @@ except Exception as e:
         st.rerun()
     st.stop()
 
+ui.page_header(f"NBA · {date_str}", f"{len(base_ctx['predictions'])} games · "
+               f"{base_ctx['season'] - 1}-{str(base_ctx['season'])[-2:]} season")
+ui.data_status(base_ctx, on_refresh=loaders.nba_ctx.clear)
+ctx = news.injury_center("nba", base_ctx)
 preds, src = loaders.with_market(ctx["predictions"], "nba")
-ui.page_header(f"NBA · {date_str}", f"{len(preds)} games · {ctx['season'] - 1}-{str(ctx['season'])[-2:]} season")
-ui.data_status(ctx, on_refresh=loaders.nba_ctx.clear)
 
 tabs = st.tabs(["Games", "Player props", "2x–3x Value", "Parlays", "DFS", "Team ratings"])
 with tabs[0]:

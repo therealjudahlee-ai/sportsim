@@ -176,8 +176,15 @@ def ratings_table(ratings, names: dict | None = None, top: int | None = None, us
     st.caption(f"Opponent-adjusted, recency-weighted ratings ({unit} vs an average team). "
                f"Home edge ≈ {ratings.hfa_points():.1f} pts.")
     cols = ["rank", "team", "net", "off", "def", "games"] + (["pace"] if uses_poss else [])
+    if "net_epa" in t.columns:
+        cols = ["rank", "team", "net", "net_epa", "off_epa", "def_epa", "off", "def", "games"]
+        st.caption("NFL: 'net' blends score-based and play-by-play (EPA per play) ratings. EPA columns are per "
+                   "play; off/def are points per game.")
     st.dataframe(t[cols].head(top) if top else t[cols], hide_index=True, use_container_width=True,
-                 column_config={"net": st.column_config.NumberColumn(format="%+.1f"),
+                 column_config={"net_epa": st.column_config.NumberColumn("net EPA/play", format="%+.3f"),
+                                "off_epa": st.column_config.NumberColumn("off EPA/play", format="%+.3f"),
+                                "def_epa": st.column_config.NumberColumn("def EPA/play (− good)", format="%+.3f"),
+                                "net": st.column_config.NumberColumn(format="%+.1f"),
                                 "off": st.column_config.NumberColumn("off (+ good)", format="%+.1f"),
                                 "def": st.column_config.NumberColumn("def (− good)", format="%+.1f"),
                                 "pace": st.column_config.NumberColumn(format="%.1f")})

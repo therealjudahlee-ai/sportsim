@@ -147,3 +147,26 @@ def test_realistic_markets():
     assert not market_offered("nba", "BLK", mean(0.2))
     assert market_offered("nba", "PTS", mean(18.0))
     assert not market_offered("nfl", "anytime_td", None, "RB")
+
+
+def test_news_classify_and_match():
+    from engine.news import classify, match_news, report_changes
+    assert classify("Lakers' Anthony Davis has been ruled out tonight vs. Denver") == "out"
+    assert classify("Davis has not been ruled out and is a game-time decision") == "questionable"
+    assert classify("Source: Joel Embiid is expected to play tonight") == "active"
+    assert classify("Hurts (knee) is doubtful for Sunday") == "doubtful"
+    assert classify("Great win for the Bills tonight") is None
+    players = pd.DataFrame({"name": ["Anthony Davis", "Joel Embiid", "Jalen Brunson"],
+                            "name_norm": ["anthony davis", "joel embiid", "jalen brunson"],
+                            "team": ["LAL", "PHI", "NYK"], "status": ["", "", ""]})
+    posts = pd.DataFrame({"id": ["1", "2", "3"], "url": ["u1", "u2", "u3"],
+                          "time": pd.to_datetime(["2026-11-24T20:00Z", "2026-11-24T21:00Z", "2026-11-24T21:30Z"], utc=True),
+                          "text": ["Anthony Davis (ankle) is OUT tonight.", "Joel Embiid will play vs Boston",
+                                   "Anthony Davis upgraded to available, will play"]})
+    m = match_news(posts, players).set_index("name_norm")
+    assert m.loc["anthony davis", "status"] == "active"        # newest report wins
+    assert m.loc["joel embiid", "status"] == "active"
+    fresh = pd.DataFrame({"name_norm": ["jalen brunson", "joel embiid"], "status": ["out", "questionable"],
+                          "comment": ["ankle", ""]})
+    rc = report_changes(fresh, set(), players)
+    assert list(rc["player"]) == ["Jalen Brunson"]

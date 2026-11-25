@@ -97,3 +97,44 @@ def test_ncaaf_context(monkeypatch, style):
     p = ctx["predictions"]
     assert len(p) == 2 and p["known"].all(), ctx["diag"]
     assert p.iloc[0]["home_spread"] == -7 and p.iloc[1]["home_spread"] == 3
+
+
+def test_nfl_epa_and_overrides(monkeypatch):
+    mod = fakes.fake_nflreadpy()
+    monkeypatch.setitem(sys.modules, "nflreadpy", mod)
+    monkeypatch.setattr(espn, "get_json", fakes.fake_espn_json("nfl"))
+    from data import nfl
+    from engine.nfl_epa import BlendedRatings
+    ctx = nfl.build_context()
+    r = ctx["ratings"]
+    assert isinstance(r, BlendedRatings) and r.epa is not None
+    # EPA ratings line up with the true (synthetic) team strengths
+    teams = sorted(mod.true_strength)
+    est = np.array([r.epa.off[t] - r.epa.deff[t] for t in teams])
+    tru = np.array([mod.true_strength[t] for t in teams])
+    assert np.corrcoef(est, tru)[0, 1] > 0.8
+    assert "net_epa" in r.table().columns
+    # KC's starter is out -> priced from measured EPA, not the flat 4.5
+    kc = ctx["predictions"]
+    assert "EPA/dropback" in " ".join(kc["injury_notes"])
+    # manual override: clear KC QB injury, rule a BUF WR out
+    base_kc = ctx["team_adj"].get("KC", 0.0)
+    wr = ctx["players"][(ctx["players"]["team"] == "BUF") & (ctx["players"]["position"] == "WR")].iloc[0]
+    new = nfl.apply_overrides(ctx, {"kc qb0": ("KC QB0 Jr.", "active"), wr["name_norm"]: (wr["name"], "out")})
+    assert new["team_adj"].get("KC", 0.0) == 0.0 and base_kc < 0
+    assert new["players"].set_index("name_norm").loc[wr["name_norm"], "status"] == "out"
+    assert ctx["team_adj"].get("KC", 0.0) == base_kc            # original context untouched
+    assert all(p["player"] != wr["name"] for p in nfl.all_projections(new, ["receiving_yards"]))
+
+
+def test_nba_overrides(monkeypatch):
+    frames = fakes.fake_nba_parquet()
+    monkeypatch.setitem(sys.modules, "nba_api", None)
+    monkeypatch.setattr(pd, "read_parquet", lambda url: frames[int(url.split("_")[-1].split(".")[0])])
+    monkeypatch.setattr(espn, "get_json", fakes.fake_espn_json("nba", [("BOS", "NY", "1", "2", "BOS -6.5")]))
+    from data import nba
+    ctx = nba.build_context("2026-03-15")
+    star = ctx["players"][ctx["players"]["team"] == "NYK"].iloc[0]
+    new = nba.apply_overrides(ctx, {star["name_norm"]: (star["name"], "out"), "p1 star": ("P1 Star", "active")})
+    assert new["team_adj"].get("NYK", 0) < 0 and "BOS" not in new["team_adj"]
+    assert new["predictions"].iloc[0]["model_margin"] > ctx["predictions"].iloc[0]["model_margin"]

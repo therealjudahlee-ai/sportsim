@@ -148,39 +148,18 @@ def build_context(date_str: str, diag: Diagnostics | None = None) -> dict:
     else:
         diag.warn(f"No NBA games found for {date_str}")
 
-    # ---------------- injuries -> team adjustments + teammate usage bump
+    # ---------------- injuries (applied in _finalize so news/overrides can re-run it)
     inj = espn.injuries("basketball/nba", diag)
     cur = logs[logs["SEASON"] == season]
     recent = cur.groupby("name_norm").tail(15)
     ppg = recent.groupby("name_norm").agg(dk=("DK_PTS", "mean"), mins=("MIN", "mean"),
                                           team=("TEAM_ABBREVIATION", "last"), name=("PLAYER_NAME", "last"))
-    team_adj, usage_bump, adj_notes, out_players = {}, {}, {}, {}
-    for _, r in inj.iterrows():
-        w = espn.status_weight(r["status"])
-        if w <= 0 or r["name_norm"] not in ppg.index:
-            continue
-        p = ppg.loc[r["name_norm"]]
-        out_players[r["name_norm"]] = r["status"]
-        over = max(p["dk"] - INJURY["nba_replacement_dkpts"], 0.0)
-        pts = min(over * INJURY["nba_per_dkpt_over_repl"], INJURY["nba_player_cap"]) * w
-        if pts > 0.05:
-            team_adj[p["team"]] = team_adj.get(p["team"], 0.0) - pts
-            usage_bump[p["team"]] = usage_bump.get(p["team"], 0.0) + over * w
-            adj_notes.setdefault(p["team"], []).append(f"{p['name']} ({r['status']})")
-    usage_bump = {t: float(min(1.10, 1.0 + 0.004 * v)) for t, v in usage_bump.items()}
 
-    # ---------------- ratings + predictions
+    # ---------------- ratings
     model = RatingsModel(games, cfg)
     ratings = model.ratings_as_of(target, season)
     slate = sb[["game_id", "date", "home", "away", "home_name", "away_name", "neutral", "home_spread", "total_line",
                 "home_ml", "away_ml", "home_rest", "away_rest", "state"]].copy() if not sb.empty else pd.DataFrame()
-    preds = predict_slate(ratings, slate, cfg, team_adj=team_adj) if not slate.empty else pd.DataFrame()
-    if not preds.empty:
-        preds["injury_notes"] = preds.apply(
-            lambda r: "; ".join(adj_notes.get(r["home"], []) + adj_notes.get(r["away"], [])), axis=1)
-        if (~preds["known"]).any():
-            diag.warn(f"{(~preds['known']).sum()} NBA games include a team with no rating "
-                      f"(check abbreviations: {sorted(set(preds.loc[~preds['known'], 'home']) | set(preds.loc[~preds['known'], 'away']))})")
 
     # ---------------- matchup multipliers + league per-minute rates
     def_lookup = {}
@@ -197,6 +176,60 @@ def build_context(date_str: str, diag: Diagnostics | None = None) -> dict:
     played = recent_logs[recent_logs["MIN"] >= 10]
     league_rate = {s: float(played[s].sum() / max(played["MIN"].sum(), 1)) for s in NBA_PROP_STATS + ["FD_PTS"]}
 
+    slate_teams = set(slate["home"]) | set(slate["away"]) if not slate.empty else set()
+    last_seen = logs[logs["GAME_DATE"] >= target - pd.Timedelta(days=21)]
+    players = (last_seen.groupby("PLAYER_ID")
+               .agg(name=("PLAYER_NAME", "last"), name_norm=("name_norm", "last"), team=("TEAM_ABBREVIATION", "last"),
+                    mins=("MIN", "mean"), dk=("DK_PTS", "mean"), pos=("POS", "last"))
+               .reset_index().rename(columns={"PLAYER_ID": "player_id"}))
+    players = players[players["team"].isin(slate_teams) & (players["mins"] >= 12)]
+    players = players.sort_values("dk", ascending=False).reset_index(drop=True)
+
+    ctx = {
+        "sport": "nba", "season": season, "date": date_str, "as_of": target, "cfg": cfg,
+        "games": games, "slate": slate, "ratings": ratings, "logs": logs, "ppg": ppg,
+        "base_players": players, "base_injuries": inj, "def_lookup": def_lookup, "league_rate": league_rate,
+        "overrides": {}, "diag": diag.to_dict(),
+    }
+    _finalize(ctx, inj)
+    preds = ctx["predictions"]
+    if not preds.empty and (~preds["known"]).any():
+        diag.warn(f"{(~preds['known']).sum()} NBA games include a team with no rating "
+                  f"(check abbreviations: {sorted(set(preds.loc[~preds['known'], 'home']) | set(preds.loc[~preds['known'], 'away']))})")
+    diag.note(f"NBA {date_str}: {len(slate)} games, {len(players)} active rotation players")
+    ctx["diag"] = diag.to_dict()
+    return ctx
+
+
+def injury_adjustments(ctx: dict, inj: pd.DataFrame) -> tuple[dict, dict, dict, dict]:
+    """(team_adj, usage_bump, notes, out_players) from an injury table."""
+    ppg = ctx["ppg"]
+    team_adj, usage, notes, out_players = {}, {}, {}, {}
+    for _, r in inj.iterrows():
+        if str(r["status"]).lower() == "active":
+            continue
+        w = espn.status_weight(r["status"])
+        if w <= 0 or r["name_norm"] not in ppg.index:
+            continue
+        p = ppg.loc[r["name_norm"]]
+        out_players[r["name_norm"]] = r["status"]
+        over = max(p["dk"] - INJURY["nba_replacement_dkpts"], 0.0)
+        pts = min(over * INJURY["nba_per_dkpt_over_repl"], INJURY["nba_player_cap"]) * w
+        if pts > 0.05:
+            team_adj[p["team"]] = team_adj.get(p["team"], 0.0) - pts
+            usage[p["team"]] = usage.get(p["team"], 0.0) + over * w
+            notes.setdefault(p["team"], []).append(f"{p['name']} ({r['status']}, -{pts:.1f})")
+    usage = {t: float(min(1.10, 1.0 + 0.004 * v)) for t, v in usage.items()}
+    return team_adj, usage, notes, out_players
+
+
+def _finalize(ctx: dict, inj: pd.DataFrame) -> dict:
+    team_adj, usage, notes, out_players = injury_adjustments(ctx, inj)
+    ratings, slate = ctx["ratings"], ctx["slate"]
+    preds = predict_slate(ratings, slate, ctx["cfg"], team_adj=team_adj) if not slate.empty else pd.DataFrame()
+    if not preds.empty:
+        preds["injury_notes"] = preds.apply(
+            lambda r: "; ".join(notes.get(r["home"], []) + notes.get(r["away"], [])), axis=1)
     game_info = {}
     for _, p in preds.iterrows():
         proj = ratings.project(p["home"], p["away"], bool(p["neutral"]))
@@ -209,23 +242,23 @@ def build_context(date_str: str, diag: Diagnostics | None = None) -> dict:
                 "blowout": p["blowout"], "b2b": bool(pd.notna(rest) and rest <= 1),
                 "team_pts": p[f"model_{side}_pts"],
             }
-
-    last_seen = logs[logs["GAME_DATE"] >= target - pd.Timedelta(days=21)]
-    players = (last_seen.groupby("PLAYER_ID")
-               .agg(name=("PLAYER_NAME", "last"), name_norm=("name_norm", "last"), team=("TEAM_ABBREVIATION", "last"),
-                    mins=("MIN", "mean"), dk=("DK_PTS", "mean"), pos=("POS", "last"))
-               .reset_index().rename(columns={"PLAYER_ID": "player_id"}))
+    players = ctx["base_players"].copy()
     players["status"] = players["name_norm"].map(out_players).fillna("")
-    players = players[players["team"].isin(game_info) & (players["mins"] >= 12)]
-    players = players.sort_values("dk", ascending=False).reset_index(drop=True)
+    ctx.update({"injuries": inj, "team_adj": team_adj, "usage_bump": usage, "predictions": preds,
+                "game_info": game_info, "players": players})
+    return ctx
 
-    diag.note(f"NBA {date_str}: {len(slate)} games, {len(players)} active rotation players")
-    return {
-        "sport": "nba", "season": season, "date": date_str, "as_of": target,
-        "games": games, "slate": slate, "predictions": preds, "ratings": ratings, "logs": logs,
-        "players": players, "injuries": inj, "team_adj": team_adj, "usage_bump": usage_bump,
-        "def_lookup": def_lookup, "league_rate": league_rate, "game_info": game_info, "diag": diag.to_dict(),
-    }
+
+def apply_overrides(ctx: dict, overrides: dict) -> dict:
+    """overrides: {name_norm: (display name, status)}; status 'active' clears an injury. Returns a NEW ctx."""
+    if not overrides:
+        return ctx
+    rows = [{"name": v[0], "name_norm": k, "status": v[1], "team_abbr": "", "team_name": "", "comment": "manual"}
+            for k, v in overrides.items()]
+    inj = pd.concat([ctx["base_injuries"], pd.DataFrame(rows)], ignore_index=True).drop_duplicates("name_norm", keep="last")
+    new = dict(ctx)
+    new["overrides"] = dict(overrides)
+    return _finalize(new, inj)
 
 
 def project_player(ctx: dict, player_id, stat: str, bump: float = 1.0) -> dict | None:

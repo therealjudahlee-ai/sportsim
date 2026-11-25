@@ -22,7 +22,7 @@ def test_walk_forward_and_tune():
     s = score(bt[bt["known"]], cfg.margin_sigma, cfg.total_sigma)
     assert 0.5 < s["su_accuracy"] < 0.9 and "ats_pct" in s
     grid = {"half_life_days": [60, 240], "ridge_alpha": [3.0], "prior_regress": [0.6]}
-    best, table = tune(games, cfg, [2025, 2026], grid=grid, log=lambda *_: None)
+    best, table = tune(games, cfg, [2025, 2026], grid=grid, log=lambda *_: None, max_rounds=1)
     assert len(table) == 2 and 8 < best["margin_sigma"] < 16
 
 
@@ -81,3 +81,16 @@ def test_refresh_job(monkeypatch, tmp_path):
     refresh.main(["nba"])
     log = pd.read_csv(tmp_path / "p.csv")
     assert len(log) == 1 and log.iloc[0]["home"] == "BOS"
+
+
+def test_tune_expands_past_grid_edge():
+    from engine.backtest import _expand
+    g = {"half_life_days": [20, 40, 80], "ridge_alpha": [2.5, 5, 10], "prior_regress": [0.4, 0.6, 0.75]}
+    nxt = _expand(g, {"half_life_days": 80, "ridge_alpha": 2.5, "prior_regress": 0.6})
+    assert nxt["half_life_days"] == [80, 160] and nxt["ridge_alpha"] == [1.25, 2.5] and nxt["prior_regress"] == [0.6]
+    assert _expand(g, {"half_life_days": 40, "ridge_alpha": 5, "prior_regress": 0.6}) is None
+    games, _ = synth_games(n_teams=12, seasons=(2024, 2025, 2026), games_per_team=16, seed=5)
+    best, table = tune(games, DEFAULTS["nfl"], [2025, 2026],
+                       grid={"half_life_days": [30, 60], "ridge_alpha": [3.0], "prior_regress": [0.6]},
+                       log=lambda *_: None, max_rounds=3)
+    assert len(table) >= 2 and "margin_sigma" in best

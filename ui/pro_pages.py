@@ -94,7 +94,7 @@ def props_tab(sport: str, ctx: dict, date_str: str = ""):
         market, remaining, warns = loaders.prop_lines(sport, matchups, tuple(chosen))
         for w in warns:
             st.warning(w)
-        proj = loaders.projections(sport, ctx["built_at"], tuple(chosen), date_str)
+        proj = loaders.projections_for(ctx, tuple(chosen))
         st.session_state[f"{sport}_edges"] = score_props(proj, market)
         st.session_state[f"{sport}_credits"] = remaining
 
@@ -130,7 +130,7 @@ def props_tab(sport: str, ctx: dict, date_str: str = ""):
 def _projection_table(sport, ctx, date_str):
     stats = NFL_MARKET_STATS if sport == "nfl" else NBA_MARKET_STATS
     stat = st.selectbox("Projection board", stats, format_func=lambda s: LABELS.get(s, s), key=f"{sport}_board")
-    projs = loaders.projections(sport, ctx["built_at"], (stat,), date_str)
+    projs = loaders.projections_for(ctx, (stat,))
     if not projs:
         st.info("No projections available.")
         return
@@ -177,12 +177,13 @@ def parlay_tab(sport: str):
 
 # =============================================================================
 @st.cache_data(ttl=2 * 3600, show_spinner="Building DFS player pool…")
-def _pool(sport: str, built_at: str, site: str, salaries: pd.DataFrame | None, date_str: str) -> pd.DataFrame:
+def _pool(sport: str, built_at: str, site: str, salaries: pd.DataFrame | None, date_str: str,
+          ov: tuple = ()) -> pd.DataFrame:
     if sport == "nfl":
         from data import nfl
-        return nfl.dfs_pool(loaders.nfl_ctx(), site, salaries)
+        return nfl.dfs_pool(loaders._with_ov("nfl", loaders.nfl_ctx(), ov), site, salaries)
     from data import nba
-    return nba.dfs_pool(loaders.nba_ctx(date_str), site, salaries)
+    return nba.dfs_pool(loaders._with_ov("nba", loaders.nba_ctx(date_str), ov), site, salaries)
 
 
 def dfs_tab(sport: str, ctx: dict, date_str: str = ""):
@@ -218,7 +219,7 @@ def dfs_tab(sport: str, ctx: dict, date_str: str = ""):
             return
         st.warning("Using **estimated** salaries. Upload your contest's CSV for exact prices and IDs you can "
                    "bulk-upload.")
-    pool = _pool(sport, ctx["built_at"], site, salaries, date_str)
+    pool = _pool(sport, ctx["built_at"], site, salaries, date_str, loaders.ov_key(ctx))
     if pool.empty:
         st.warning("No players in the pool — salary file may be for a different slate.")
         return
@@ -321,7 +322,7 @@ def value_tab(sport: str, ctx: dict, date_str: str = ""):
         return
     from engine.edges import value_finder
     scanned_stats, ladder = saved
-    projs = loaders.projections(sport, ctx["built_at"], scanned_stats, date_str)
+    projs = loaders.projections_for(ctx, scanned_stats)
     f1, f2, f3, f4 = st.columns(4)
     min_ev = f1.slider("Min EV per $1", -0.10, 0.50, 0.03, 0.01, key=f"{sport}_v_ev")
     min_books = f2.slider("Min books offering", 1, 6, 1, key=f"{sport}_v_books")
@@ -383,7 +384,7 @@ def _fair_ladder_view(sport, ctx, date_str, stats, lo, hi, compact=False):
     if not compact:
         ui.no_odds_key_note()
     payouts = tuple(sorted({round(lo, 1), round((lo + hi) / 2, 1), round(hi, 1)}))
-    projs = loaders.projections(sport, ctx["built_at"], tuple(stats), date_str)
+    projs = loaders.projections_for(ctx, tuple(stats))
     if not projs:
         st.info("No projections available.")
         return

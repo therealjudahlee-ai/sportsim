@@ -22,8 +22,9 @@ from .ratings import RatingsModel
 
 
 def walk_forward(games: pd.DataFrame, cfg: SportConfig, eval_seasons: list[int],
-                 min_date_gap_days: int = 0) -> pd.DataFrame:
-    model = RatingsModel(games, cfg)
+                 min_date_gap_days: int = 0, model_factory=None) -> pd.DataFrame:
+    """model_factory(cfg) -> object with ratings_as_of(as_of, season); default = score-only ratings."""
+    model = model_factory(cfg) if model_factory else RatingsModel(games, cfg)
     done = games.dropna(subset=["home_pts", "away_pts"])
     rows = []
     for s in eval_seasons:
@@ -80,29 +81,76 @@ def score(bt: pd.DataFrame, margin_sigma: float, total_sigma: float) -> dict:
     return out
 
 
+BOUNDED = {"prior_regress": (0.0, 0.95), "epa_weight": (0.0, 1.0)}
+
+
+def _expand(grid: dict, best: dict) -> dict | None:
+    """If the best value sits on the edge of its grid, push that axis outward."""
+    new, moved = {}, False
+    for k, vals in grid.items():
+        vals = sorted(vals)
+        b = best[k]
+        if k in BOUNDED:
+            lo_b, hi_b = BOUNDED[k]
+            step = 0.15
+            if b == vals[-1] and b < hi_b:
+                vals = [b, min(hi_b, b + step)]
+                moved = True
+            elif b == vals[0] and b > lo_b:
+                vals = [max(lo_b, b - step), b]
+                moved = True
+            else:
+                vals = [b]
+        else:
+            lo_lim, hi_lim = {"half_life_days": (5.0, 2000.0), "ridge_alpha": (0.1, 100.0)}.get(k, (1e-3, 1e6))
+            if b == vals[-1] and b * 2 <= hi_lim:
+                vals = [b, b * 2]
+                moved = True
+            elif b == vals[0] and b / 2 >= lo_lim:
+                vals = [b / 2, b]
+                moved = True
+            else:
+                vals = [b]
+        new[k] = sorted(set(round(v, 4) for v in vals))
+    return new if moved else None
+
+
 def tune(games: pd.DataFrame, cfg: SportConfig, eval_seasons: list[int], grid: dict | None = None,
-         min_date_gap_days: int = 0, log=print) -> tuple[dict, pd.DataFrame]:
+         min_date_gap_days: int = 0, log=print, max_rounds: int = 4,
+         model_factory=None) -> tuple[dict, pd.DataFrame]:
+    """Grid search; if the winner lands on the edge of the grid, keep searching outward
+    (up to max_rounds) instead of stopping at an arbitrary boundary."""
     grid = grid or {
         "half_life_days": sorted({cfg.half_life_days * f for f in (0.5, 1.0, 2.0)}),
         "ridge_alpha": sorted({cfg.ridge_alpha * f for f in (0.5, 1.0, 2.0)}),
         "prior_regress": sorted({max(0.0, min(1.0, cfg.prior_regress + d)) for d in (-0.2, 0.0, 0.15)}),
     }
+    if model_factory is not None and "epa_weight" not in grid:
+        grid["epa_weight"] = [0.3, 0.6, 0.9]
     keys = list(grid)
-    results = []
+    seen: dict[tuple, dict] = {}
     t0 = time.time()
-    for combo in itertools.product(*grid.values()):
-        params = dict(zip(keys, combo))
-        c = replace(cfg, **params)
-        bt = walk_forward(games, c, eval_seasons, min_date_gap_days)
-        bt = bt[bt["known"]]
-        res = bt["act_margin"] - bt["pred_margin"]
-        rmse = float(np.sqrt((res ** 2).mean()))
-        results.append({**params, "margin_rmse": rmse, "n": len(bt)})
-        log(f"  {params} -> margin RMSE {rmse:.3f}  ({time.time() - t0:.0f}s)")
-    table = pd.DataFrame(results).sort_values("margin_rmse").reset_index(drop=True)
-    best = table.iloc[0][keys].to_dict()
+    for rnd in range(max_rounds):
+        for combo in itertools.product(*grid.values()):
+            ck = tuple(round(v, 4) for v in combo)
+            if ck in seen:
+                continue
+            params = dict(zip(keys, combo))
+            bt = walk_forward(games, replace(cfg, **params), eval_seasons, min_date_gap_days, model_factory)
+            bt = bt[bt["known"]]
+            rmse = float(np.sqrt(((bt["act_margin"] - bt["pred_margin"]) ** 2).mean()))
+            seen[ck] = {**params, "margin_rmse": rmse, "n": len(bt)}
+            log(f"  [round {rnd + 1}] {params} -> margin RMSE {rmse:.3f}  ({time.time() - t0:.0f}s)")
+        table = pd.DataFrame(seen.values()).sort_values("margin_rmse").reset_index(drop=True)
+        best = table.iloc[0][keys].to_dict()
+        nxt = _expand(grid, best)
+        if nxt is None:
+            log(f"  best setting is inside the search range after round {rnd + 1}")
+            break
+        log(f"  best was on the edge of the range; searching further: {nxt}")
+        grid = nxt
     c = replace(cfg, **best)
-    bt = walk_forward(games, c, eval_seasons, min_date_gap_days)
+    bt = walk_forward(games, c, eval_seasons, min_date_gap_days, model_factory)
     bt = bt[bt["known"]]
     best["margin_sigma"] = float((bt["act_margin"] - bt["pred_margin"]).std())
     best["total_sigma"] = float((bt["act_total"] - bt["pred_total"]).std())

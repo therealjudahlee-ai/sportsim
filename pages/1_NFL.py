@@ -2,13 +2,13 @@ import streamlit as st
 
 from engine.config import get_config
 from ui import components as ui
-from ui import loaders, pro_pages
+from ui import loaders, news, pro_pages
 
 st.set_page_config(page_title="NFL · SportSim", page_icon="🏈", layout="wide")
 cfg = get_config("nfl")
 
 try:
-    ctx = loaders.nfl_ctx()
+    base_ctx = loaders.nfl_ctx()
 except Exception as e:
     st.error(f"Couldn't load NFL data: {type(e).__name__}: {e}")
     if st.button("Retry"):
@@ -16,10 +16,12 @@ except Exception as e:
         st.rerun()
     st.stop()
 
+ui.page_header(f"NFL · {base_ctx['season']} Week {base_ctx['week']}",
+               f"{len(base_ctx['predictions'])} games · ratings blend scores with play-by-play efficiency (EPA) · "
+               "injuries from nflverse + ESPN")
+ui.data_status(base_ctx, on_refresh=loaders.nfl_ctx.clear)
+ctx = news.injury_center("nfl", base_ctx)
 preds, src = loaders.with_market(ctx["predictions"], "nfl")
-ui.page_header(f"NFL · {ctx['season']} Week {ctx['week']}",
-               f"{len(preds)} games · injuries from nflverse + ESPN")
-ui.data_status(ctx, on_refresh=loaders.nfl_ctx.clear)
 
 tabs = st.tabs(["Games", "Player props", "2x–3x Value", "Parlays", "DFS", "Team ratings"])
 with tabs[0]:

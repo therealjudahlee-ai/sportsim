@@ -12,12 +12,38 @@ from tests.synth import synth_games
 NFL_TEAMS = ["KC", "BUF", "PHI", "DAL", "SF", "SEA", "DET", "GB"]
 
 
-class _PL:  # mimics polars .to_pandas()
+class _PL:  # mimics a polars DataFrame: .columns, .select(), .to_pandas()
     def __init__(self, df):
         self.df = df
 
+    @property
+    def columns(self):
+        return list(self.df.columns)
+
+    def select(self, cols):
+        return _PL(self.df[list(cols)])
+
     def to_pandas(self):
         return self.df.copy()
+
+
+def fake_pbp(sched, seed=1):
+    """Synthetic play-by-play: team strength shows up in EPA/play."""
+    rng = np.random.default_rng(seed)
+    strength = {t: rng.normal(0, 0.08) for t in NFL_TEAMS}
+    rows = []
+    for _, g in sched.dropna(subset=["home_score"]).iterrows():
+        for off, de in ((g["home_team"], g["away_team"]), (g["away_team"], g["home_team"])):
+            n = 60
+            epa = rng.normal(strength[off] - strength[de], 1.3, n)
+            db = rng.random(n) < 0.6
+            rows.append(pd.DataFrame({
+                "game_id": g["game_id"], "season": g["season"], "week": g["week"], "season_type": "REG",
+                "game_date": g["gameday"], "home_team": g["home_team"], "away_team": g["away_team"],
+                "posteam": off, "defteam": de, "play_type": np.where(db, "pass", "run"), "epa": epa,
+                "wp": 0.5, "qb_dropback": db.astype(float),
+                "passer_player_id": np.where(db, f"{off}-QB0", None), "passer_player_name": np.where(db, "QB", None)}))
+    return pd.concat(rows, ignore_index=True), strength
 
 
 def fake_nflreadpy(season=2026, week=12):
@@ -71,7 +97,9 @@ def fake_nflreadpy(season=2026, week=12):
         "team": [n.split()[0] for n in stats["player_display_name"].unique()]}))
     mod.load_depth_charts = lambda seasons: _PL(pd.DataFrame({
         "dt": "2026-11-20", "pos_abb": "QB", "pos_rank": 1, "player_name": [f"{t} QB0" for t in NFL_TEAMS],
-        "team": NFL_TEAMS}))
+        "team": NFL_TEAMS, "gsis_id": [f"{t}-QB0" for t in NFL_TEAMS]}))
+    pbp, mod.true_strength = fake_pbp(sched)
+    mod.load_pbp = lambda seasons: _PL(pbp[pbp["season"].isin(seasons)])
     mod.load_injuries = lambda seasons: _PL(pd.DataFrame({
         "week": [week], "full_name": ["KC QB0 Jr."], "report_status": ["Out"], "team": ["KC"]}))
     return mod

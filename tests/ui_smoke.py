@@ -92,8 +92,7 @@ def fake_game_lines(sport):
 
 def fake_prop_lines(sport, matchups, stats):
     from engine.common import norm_name
-    projs = loaders.projections(sport, (loaders.nfl_ctx() if sport == "nfl" else loaders.nba_ctx("2026-03-15"))["built_at"],
-                                tuple(stats), "2026-03-15")
+    projs = loaders.projections_for(loaders.nfl_ctx() if sport == "nfl" else loaders.nba_ctx("2026-03-15"), tuple(stats))
     rng = np.random.default_rng(0)
     rows = [{"event_id": "e", "player": p["player"], "player_norm": norm_name(p["player"]), "stat": p["stat"],
              "line": 0.5 if p["stat"] == "anytime_td" else float(np.floor(p["median"] * rng.uniform(0.85, 1.1)) + 0.5),
@@ -105,7 +104,7 @@ def fake_prop_lines(sport, matchups, stats):
 def fake_alt_lines(sport, matchups, stats):
     from engine.common import norm_name
     ctx = loaders.nfl_ctx() if sport == "nfl" else loaders.nba_ctx("2026-03-15")
-    projs = loaders.projections(sport, ctx["built_at"], tuple(stats), "2026-03-15")
+    projs = loaders.projections_for(ctx, tuple(stats))
     rows = []
     for p in projs:
         for k, price in enumerate([-150, 110, 150, 190, 240]):
@@ -119,7 +118,19 @@ loaders.alt_lines = fake_alt_lines
 loaders.game_lines = fake_game_lines
 loaders.prop_lines = fake_prop_lines
 st.session_state.clear()
-results["nfl+odds"] = run("pages/1_NFL.py", "nfl (odds key)")
+# breaking news: ESPN report + an X post, plus a manual override
+nfl_base = loaders.nfl_ctx()
+buf_wr = nfl_base["players"][(nfl_base["players"]["team"] == "BUF") & (nfl_base["players"]["position"] == "WR")].iloc[0]
+phi_rb = nfl_base["players"][(nfl_base["players"]["team"] == "PHI") & (nfl_base["players"]["position"] == "RB")].iloc[0]
+loaders.fresh_injuries = lambda sport: pd.DataFrame({"name": [buf_wr["name"]], "name_norm": [buf_wr["name_norm"]],
+                                                     "status": ["out"], "team_abbr": ["BUF"], "team_name": [""],
+                                                     "comment": ["hamstring"]})
+loaders.x_token = lambda: "tok"
+loaders.x_posts = lambda sport, handles, hours: (pd.DataFrame({
+    "id": ["9"], "url": ["https://x.com/i/web/status/9"], "time": [pd.Timestamp.now(tz="UTC")],
+    "text": [f"{phi_rb['name']} has been ruled out for Sunday."]}), [])
+st.session_state["nfl_mark_out"] = [phi_rb["name"]]
+results["nfl+odds"] = run("pages/1_NFL.py", "nfl (odds key + news + override)")
 results["nba+odds"] = run("pages/2_NBA.py", "nba (odds key)")
 
 # DFS for NBA needs salaries: simulate live DK salaries in session
@@ -151,6 +162,10 @@ results["home2"] = run("app.py", "home (with record)")
 
 bad = {k: v[0] for k, v in results.items() if v[0] == "CRASH"}
 print("\nCRASHES:", bad or "none")
+log = results["nfl+odds"][1]
+print("news expander:", [e for e in log if e[0] == "expander" and "injury update" in str(e[1])])
+print("override banner:", [e[1][:90] for e in log if e[0] == "info" and "overrides" in e[1]])
+print("apply buttons:", sum(1 for e in log if e[0] == "button" and e[1] == "Apply"))
 for k in ("nfl+odds", "nba+dfs"):
     log = results[k][1]
     print(f"\n--- {k}: warnings/info/errors")

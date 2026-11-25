@@ -47,15 +47,6 @@ def ncaaf_ctx() -> dict:
     return _stamp(college.build_ncaaf_context(Diagnostics()))
 
 
-@st.cache_resource(ttl=2 * HOUR, show_spinner="Projecting players…")
-def projections(sport: str, built_at: str, stats: tuple, date_str: str = "") -> list[dict]:
-    if sport == "nfl":
-        from data import nfl
-        return nfl.all_projections(nfl_ctx(), list(stats))
-    from data import nba
-    return nba.all_projections(nba_ctx(date_str), list(stats))
-
-
 # ------------------------------------------------------------------ odds
 def odds_key() -> str:
     try:
@@ -125,3 +116,58 @@ def alt_lines(sport: str, matchups: tuple, stats: tuple) -> tuple[pd.DataFrame, 
             if not df.empty:
                 frames.append(df)
     return (pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()), client.remaining, diag.warnings
+
+
+# ------------------------------------------------------------------ breaking news + overrides
+def _secret(name: str) -> str:
+    import os
+    try:
+        v = st.secrets.get(name, "")
+        if v:
+            return str(v)
+    except Exception:
+        pass
+    return os.environ.get(name, "")
+
+
+def x_token() -> str:
+    return _secret("X_BEARER_TOKEN")
+
+
+@st.cache_data(ttl=15 * 60, show_spinner=False)
+def fresh_injuries(sport: str) -> pd.DataFrame:
+    """Light ESPN injury check, every 15 min, independent of the big data reload."""
+    from data import espn
+    path = "football/nfl" if sport == "nfl" else "basketball/nba"
+    return espn.injuries(path, Diagnostics())
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def x_posts(sport: str, handles: tuple, hours: float) -> tuple[pd.DataFrame, list]:
+    from engine.news import fetch_x_posts
+    diag = Diagnostics()
+    return fetch_x_posts(x_token(), list(handles), hours=hours, diag=diag), diag.warnings
+
+
+def ov_key(ctx: dict) -> tuple:
+    return tuple(sorted((k, v[0], v[1]) for k, v in ctx.get("overrides", {}).items()))
+
+
+def _with_ov(sport: str, base: dict, ov: tuple) -> dict:
+    if not ov:
+        return base
+    mod = __import__(f"data.{sport}", fromlist=["apply_overrides"])
+    return mod.apply_overrides(base, {k: (n, s) for k, n, s in ov})
+
+
+@st.cache_resource(ttl=2 * HOUR, show_spinner="Projecting players…")
+def _projections(sport: str, built_at: str, stats: tuple, date_str: str, ov: tuple) -> list[dict]:
+    base = nfl_ctx() if sport == "nfl" else nba_ctx(date_str)
+    ctx = _with_ov(sport, base, ov)
+    mod = __import__(f"data.{sport}", fromlist=["all_projections"])
+    return mod.all_projections(ctx, list(stats))
+
+
+def projections_for(ctx: dict, stats: tuple) -> list[dict]:
+    """Projections for a (possibly overridden) context; cached per override set."""
+    return _projections(ctx["sport"], ctx["built_at"], tuple(stats), ctx.get("date", ""), ov_key(ctx))

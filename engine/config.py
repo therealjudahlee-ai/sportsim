@@ -31,6 +31,7 @@ class SportConfig:
     rest_penalty_b2b: float = 0.0   # points lost on 0 days rest (basketball)
     odds_api_key: str = ""     # The Odds API sport key
     league_avg_total: float = 0.0
+    epa_weight: float = 0.0    # NFL only: share of the margin from play-by-play efficiency ratings
 
 
 DEFAULTS: dict[str, SportConfig] = {
@@ -40,7 +41,7 @@ DEFAULTS: dict[str, SportConfig] = {
         margin_sigma=13.5, total_sigma=13.5,
         default_hfa=1.8, blowout_margin=14, min_team_games=1,
         uses_possessions=False, odds_api_key="americanfootball_nfl",
-        league_avg_total=45.0,
+        league_avg_total=45.0, epa_weight=0.6,
     ),
     "nba": SportConfig(
         key="nba", label="NBA",
@@ -68,7 +69,7 @@ DEFAULTS: dict[str, SportConfig] = {
     ),
 }
 
-TUNABLE = ("half_life_days", "ridge_alpha", "prior_regress", "margin_sigma", "total_sigma")
+TUNABLE = ("half_life_days", "ridge_alpha", "prior_regress", "margin_sigma", "total_sigma", "epa_weight")
 
 
 def get_config(sport: str) -> SportConfig:

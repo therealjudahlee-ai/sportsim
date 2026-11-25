@@ -8,7 +8,7 @@ from engine.common import Diagnostics, norm_name, now_et
 from engine.config import INJURY, NFL_WIND_MPH, NFL_WIND_TOTAL_MULT, get_config
 from engine.gamesim import predict_slate
 from engine.props import NFL_VOLUME, market_offered, nfl_env_factors, project_nfl, shrink_matchup
-from engine.ratings import RatingsModel
+from engine.nfl_epa import QB_OUT_CAP, NFLModel, load_pbp_lean, qb_epa_values, qb_out_points, team_game_epa
 
 from . import espn
 
@@ -112,6 +112,7 @@ def build_context(diag: Diagnostics | None = None) -> dict:
         diag.warn("NFL weekly rosters unavailable", e)
 
     qb1: dict[str, str] = {}
+    qb_ids: dict[str, dict] = {}     # team -> {"qb1": gsis_id, "qb2": gsis_id}
     try:
         dc = nfl.load_depth_charts([season]).to_pandas()
         for c in ("dt", "week"):
@@ -122,13 +123,30 @@ def build_context(diag: Diagnostics | None = None) -> dict:
         rank_c = next((c for c in ("pos_rank", "depth_team") if c in dc.columns), None)
         name_c = next((c for c in ("player_name", "full_name") if c in dc.columns), None)
         team_c = next((c for c in ("team", "club_code") if c in dc.columns), None)
+        id_c = next((c for c in ("gsis_id", "player_id") if c in dc.columns), None)
         if all((pos_c, rank_c, name_c, team_c)):
-            q = dc[(dc[pos_c] == "QB") & (pd.to_numeric(dc[rank_c], errors="coerce") == 1)]
-            qb1 = {str(r[team_c]): norm_name(r[name_c]) for _, r in q.iterrows()}
+            q = dc[dc[pos_c] == "QB"].copy()
+            q["_rank"] = pd.to_numeric(q[rank_c], errors="coerce")
+            for _, r in q[q["_rank"] == 1].iterrows():
+                qb1[str(r[team_c])] = norm_name(r[name_c])
+            if id_c:
+                for _, r in q[q["_rank"].isin([1, 2])].iterrows():
+                    qb_ids.setdefault(str(r[team_c]), {})[f"qb{int(r['_rank'])}"] = str(r[id_c])
         else:
             diag.warn("NFL depth chart columns not recognized; QB1 detection disabled")
     except Exception as e:
         diag.warn("NFL depth charts unavailable", e)
+
+    # ---------------- play-by-play efficiency (EPA) + QB values
+    egames, qb_vals = pd.DataFrame(), {}
+    try:
+        pbp = load_pbp_lean(nfl, seasons)
+        egames = team_game_epa(pbp, games)
+        qb_vals = qb_epa_values(pbp)
+        del pbp
+        diag.note(f"NFL play-by-play: EPA for {len(egames)} games, {len(qb_vals)} quarterbacks")
+    except Exception as e:
+        diag.warn("NFL play-by-play unavailable; using score-only ratings and flat QB injury values", e)
 
     inj_rows = []
     try:
@@ -149,35 +167,14 @@ def build_context(diag: Diagnostics | None = None) -> dict:
     injuries = pd.DataFrame(inj_rows, columns=["name_norm", "name", "status", "team", "source"])
     if not injuries.empty:
         injuries = injuries.drop_duplicates("name_norm", keep="last")   # ESPN is fresher
-    for _, r in injuries.iterrows():
-        if espn.status_weight(r["status"]) >= 0.75:
-            out_status[r["name_norm"]] = r["status"]
 
-    # ---------------- team injury adjustments (points off a team's projection)
     cur = reg[reg["season"] == season]
     ppg = cur.groupby("name_norm").agg(dk=("dk_points", "mean"), n=("dk_points", "size"),
-                                       team=("team", "last"), pos=("position", "last"))
-    team_adj: dict[str, float] = {}
-    adj_notes: dict[str, list] = {}
-    for _, r in injuries.iterrows():
-        w = espn.status_weight(r["status"])
-        if w <= 0 or r["name_norm"] not in ppg.index:
-            continue
-        p = ppg.loc[r["name_norm"]]
-        team = roster_team.get(r["name_norm"], p["team"])
-        if p["pos"] == "QB" and qb1.get(team) == r["name_norm"]:
-            d = INJURY["nfl_qb1_out"] * w
-        elif p["pos"] in SKILL and p["n"] >= 3 and p["dk"] >= 12:
-            d = INJURY["nfl_skill_out"] * w
-        else:
-            continue
-        team_adj[team] = team_adj.get(team, 0.0) - d
-        adj_notes.setdefault(team, []).append(f"{r['name']} ({r['status']})")
-    for t in team_adj:
-        team_adj[t] = max(team_adj[t], -(INJURY["nfl_qb1_out"] + INJURY["nfl_skill_cap"]))
+                                       team=("team", "last"), pos=("position", "last"),
+                                       pid=("player_id", "last"))
 
     # ---------------- ratings + this week's slate
-    model = RatingsModel(games, cfg)
+    model = NFLModel(games, egames, cfg)
     as_of = pd.Timestamp(now_et().date())
     ratings = model.ratings_as_of(as_of, season)
     slate = games[(games["season"] == season) & (games["week"] == week)].copy()
@@ -185,13 +182,6 @@ def build_context(diag: Diagnostics | None = None) -> dict:
     for _, g in slate.iterrows():
         if g["roof"] in ("outdoors", "open") and pd.notna(g["wind"]) and g["wind"] >= NFL_WIND_MPH:
             total_mult[g["game_id"]] = NFL_WIND_TOTAL_MULT
-    preds = predict_slate(ratings, slate, cfg, team_adj=team_adj, total_mult=total_mult)
-    if not preds.empty:
-        preds["injury_notes"] = preds.apply(
-            lambda r: "; ".join(adj_notes.get(r["home"], []) + adj_notes.get(r["away"], [])), axis=1)
-        missing = (~preds["known"]).sum()
-        if missing:
-            diag.warn(f"{missing} NFL games have a team with no rating")
 
     # ---------------- matchup multipliers & league baselines for props
     def_lookup = {}
@@ -226,7 +216,7 @@ def build_context(diag: Diagnostics | None = None) -> dict:
     league_team_pts = float(pd.concat([team_games["home_pts"], team_games["away_pts"]]).mean()) \
         if len(team_games) else cfg.league_avg_total / 2
 
-    # ---------------- active player index for this week
+    # ---------------- active player index for this week (statuses filled in by _finalize)
     slate_teams = set(slate["home"]) | set(slate["away"])
     recent_cut = reg[(reg["season"] == season) & (reg["week"] >= max(1, week - 5))]
     if recent_cut.empty:
@@ -237,7 +227,6 @@ def build_context(diag: Diagnostics | None = None) -> dict:
                                          dk=("dk_points", "mean"), att=("attempts", "mean"))
                .reset_index())
     players["team"] = players.apply(lambda r: roster_team.get(r["name_norm"], r["team"]), axis=1)
-    players["status"] = players["name_norm"].map(out_status).fillna("")
     players = players[players["team"].isin(slate_teams)]
     if not players.empty:
         is_backup_qb = (players["position"] == "QB") & players.apply(
@@ -245,6 +234,67 @@ def build_context(diag: Diagnostics | None = None) -> dict:
         players = players[~is_backup_qb | (players["att"] >= 20)]
     players = players.sort_values("dk", ascending=False).reset_index(drop=True)
 
+    ctx = {
+        "sport": "nfl", "season": season, "week": week, "as_of": as_of, "cfg": cfg,
+        "games": games, "slate": slate, "total_mult": total_mult, "ratings": ratings,
+        "logs": reg, "base_players": players, "base_injuries": injuries, "roster_out": out_status,
+        "roster_team": roster_team, "ppg": ppg, "qb1": qb1, "qb_ids": qb_ids, "qb_vals": qb_vals,
+        "def_lookup": def_lookup, "league": league, "league_team_pts": league_team_pts,
+        "overrides": {}, "diag": diag.to_dict(),
+    }
+    _finalize(ctx, injuries)
+    if not ctx["predictions"].empty and (~ctx["predictions"]["known"]).any():
+        diag.warn(f"{(~ctx['predictions']['known']).sum()} NFL games have a team with no rating")
+        ctx["diag"] = diag.to_dict()
+    diag.note(f"NFL {season} week {week}: {len(slate)} games, {len(players)} active skill players")
+    ctx["diag"] = diag.to_dict()
+    return ctx
+
+
+def injury_adjustments(ctx: dict, injuries: pd.DataFrame) -> tuple[dict, dict, dict]:
+    """(team_adj points, notes per team, out_status by name) from an injury table."""
+    out_status = dict(ctx["roster_out"])
+    team_adj: dict[str, float] = {}
+    notes: dict[str, list] = {}
+    ppg, qb1, qb_ids = ctx["ppg"], ctx["qb1"], ctx["qb_ids"]
+    for _, r in injuries.iterrows():
+        w = espn.status_weight(r["status"])
+        if str(r["status"]).lower() == "active":
+            out_status.pop(r["name_norm"], None)
+            continue
+        if w >= 0.75:
+            out_status[r["name_norm"]] = r["status"]
+        if w <= 0 or r["name_norm"] not in ppg.index:
+            continue
+        p = ppg.loc[r["name_norm"]]
+        team = ctx["roster_team"].get(r["name_norm"], p["team"])
+        if p["pos"] == "QB" and qb1.get(team) == r["name_norm"]:
+            ids = qb_ids.get(team, {})
+            pts, why = qb_out_points(ctx["qb_vals"], ids.get("qb1", p["pid"]), ids.get("qb2"),
+                                     INJURY["nfl_qb1_out"])
+            d = pts * w
+            note = f"{r['name']} ({r['status']}, -{pts:.1f}: {why})"
+        elif p["pos"] in SKILL and p["n"] >= 3 and p["dk"] >= 12:
+            d = INJURY["nfl_skill_out"] * w
+            note = f"{r['name']} ({r['status']})"
+        else:
+            continue
+        team_adj[team] = team_adj.get(team, 0.0) - d
+        notes.setdefault(team, []).append(note)
+    for t in team_adj:
+        team_adj[t] = max(team_adj[t], -(QB_OUT_CAP + INJURY["nfl_skill_cap"]))
+    return team_adj, notes, out_status
+
+
+def _finalize(ctx: dict, injuries: pd.DataFrame) -> dict:
+    """Everything that depends on injuries: team adjustments, predictions, statuses, game info."""
+    team_adj, notes, out_status = injury_adjustments(ctx, injuries)
+    preds = predict_slate(ctx["ratings"], ctx["slate"], ctx["cfg"], team_adj=team_adj, total_mult=ctx["total_mult"])
+    if not preds.empty:
+        preds["injury_notes"] = preds.apply(
+            lambda r: "; ".join(notes.get(r["home"], []) + notes.get(r["away"], [])), axis=1)
+    players = ctx["base_players"].copy()
+    players["status"] = players["name_norm"].map(out_status).fillna("")
     game_info = {}
     for _, p in preds.iterrows():
         for side, other in (("home", "away"), ("away", "home")):
@@ -255,15 +305,23 @@ def build_context(diag: Diagnostics | None = None) -> dict:
                 "wind": p["wind"] if p["roof"] in ("outdoors", "open") and pd.notna(p["wind"]) else 0.0,
                 "is_home": side == "home",
             }
+    ctx.update({"injuries": injuries, "team_adj": team_adj, "out_status": out_status, "predictions": preds,
+                "players": players, "game_info": game_info})
+    return ctx
 
-    diag.note(f"NFL {season} week {week}: {len(slate)} games, {len(players)} active skill players")
-    return {
-        "sport": "nfl", "season": season, "week": week, "as_of": as_of,
-        "games": games, "slate": slate, "predictions": preds, "ratings": ratings,
-        "logs": reg, "players": players, "injuries": injuries, "out_status": out_status,
-        "qb1": qb1, "team_adj": team_adj, "def_lookup": def_lookup, "league": league,
-        "league_team_pts": league_team_pts, "game_info": game_info, "diag": diag.to_dict(),
-    }
+
+def apply_overrides(ctx: dict, overrides: dict) -> dict:
+    """overrides: {name_norm: (display name, status)} from manual clicks or news.
+    status 'out'/'doubtful'/'questionable' or 'active' (clears an injury). Returns a NEW ctx."""
+    if not overrides:
+        return ctx
+    rows = [{"name_norm": k, "name": v[0], "status": v[1], "team": "", "source": "manual"}
+            for k, v in overrides.items()]
+    inj = pd.concat([ctx["base_injuries"], pd.DataFrame(rows)], ignore_index=True)
+    inj = inj.drop_duplicates("name_norm", keep="last")
+    new = dict(ctx)
+    new["overrides"] = dict(overrides)
+    return _finalize(new, inj)
 
 
 def project_player(ctx: dict, player_id, stat: str, bump: float = 1.0, opp: str | None = None) -> dict | None:
