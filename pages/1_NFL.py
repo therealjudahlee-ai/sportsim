@@ -2,6 +2,7 @@ import streamlit as st
 
 from engine.config import get_config
 from ui import components as ui
+from ui.kalshi_props_tab import kalshi_props_tab
 from ui.kalshi_tab import kalshi_tab
 from ui import loaders, news, pro_pages
 
@@ -24,20 +25,22 @@ ui.data_status(base_ctx, on_refresh=loaders.nfl_ctx.clear)
 ctx = news.injury_center("nfl", base_ctx)
 preds, src = loaders.with_market(ctx["predictions"], "nfl")
 
-tabs = st.tabs(["Games", "Kalshi", "Player props", "2x–3x Value", "Parlays", "DFS", "Team ratings"])
+tabs = st.tabs(["Games", "Kalshi games", "Kalshi props", "Player props", "2x–3x Value", "Parlays", "DFS", "Team ratings"])
 with tabs[0]:
     ui.games_board(preds, cfg, src, key="nfl_games", default_cards=16)
 with tabs[1]:
     kalshi_tab("nfl", ctx, preds)
 with tabs[2]:
-    pro_pages.props_tab("nfl", ctx)
+    kalshi_props_tab("nfl", ctx, preds)
 with tabs[3]:
-    pro_pages.value_tab("nfl", ctx)
+    pro_pages.props_tab("nfl", ctx)
 with tabs[4]:
-    pro_pages.parlay_tab("nfl")
+    pro_pages.value_tab("nfl", ctx)
 with tabs[5]:
-    pro_pages.dfs_tab("nfl", ctx)
+    pro_pages.parlay_tab("nfl")
 with tabs[6]:
+    pro_pages.dfs_tab("nfl", ctx)
+with tabs[7]:
     ui.ratings_table(ctx["ratings"])
     if ctx["team_adj"]:
         st.caption("Injury adjustments this week (points): " +

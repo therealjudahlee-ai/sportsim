@@ -243,6 +243,9 @@ def test_passing_td_market_is_not_anytime_td(monkeypatch):
     assert kalshi.title_matches_stat("passing_tds", "Joe Burrow: 1+ passing touchdowns")
     assert not kalshi.title_matches_stat("anytime_td", "Joe Burrow: 1+ passing touchdowns")
     assert not kalshi.title_matches_stat("PTS", "Steph Curry: 5+ three pointers")
+    assert kalshi.title_matches_stat("PTS", "Malik Monk: 20+")              # bare title -> trust the series
+    assert kalshi.title_matches_stat("PTS", "Malik Monk: 20+ points")
+    assert not kalshi.title_matches_stat("REB", "Malik Monk: 20+ points")
 
 
 def test_burrow_scored_sensibly_and_suspects_flagged():

@@ -62,9 +62,14 @@ STAT_TITLE_FORBID = {"anytime_td": ("pass",), "PTS": ("three", "3-point", "rebou
 
 
 def title_matches_stat(stat: str, title: str) -> bool:
+    """Reject a prop whose title names a DIFFERENT stat (e.g. 'passing touchdowns' scored as anytime TD).
+    Titles that don't name any stat (just 'Player: 20+') are trusted to the series mapping."""
     t = str(title).lower()
     if any(w in t for w in STAT_TITLE_FORBID.get(stat, ())):
         return False
+    mentions_any = any(any(w in t for w in grp) for groups in STAT_TITLE.values() for grp in groups)
+    if not mentions_any:
+        return True
     return all(any(w in t for w in group) for group in STAT_TITLE.get(stat, ()))
 
 

@@ -151,11 +151,14 @@ def fake_kalshi(sport):
                 continue
             home, away = g["game"].split(" @ ")[1], g["game"].split(" @ ")[0]
             ev = f"26NOV27{away}{home}"
-            raw_p.append({"ticker": f"XP-{ev}-{pr['player_norm'][:5]}", "event_ticker": f"XP-{ev}",
-                          "title": f"{pr['player']}: 20+", "yes_sub_title": f"{pr['player']}: 20+",
-                          "yes_bid_dollars": "0.40", "yes_ask_dollars": "0.45", "last_price_dollars": "0.4",
-                          "volume_fp": "20", "close_time": "2026-11-29T03:00:00Z", "status": "active",
-                          "floor_strike": 19.5})
+            for j, mult in enumerate((0.55, 0.8, 1.0, 1.25)):          # a 4-rung ladder like Kalshi's
+                strike = float(np.floor(pr["median"] * mult)) + 0.5
+                pyes = pr["dist"].prob_over(strike)
+                raw_p.append({"ticker": f"XP-{ev}-{pr['player_norm'][:6]}-{j}", "event_ticker": f"XP-{ev}",
+                              "title": f"{pr['player']}: {strike + 0.5:.0f}+ {'receiving yards' if sport == 'nfl' else 'points'}", "yes_sub_title": f"{pr['player']}: {strike + .5:.0f}+",
+                              "yes_bid_dollars": f"{max(0.01, pyes - 0.03):.2f}", "yes_ask_dollars": f"{min(0.99, pyes + 0.02):.2f}",
+                              "last_price_dollars": "0.4", "volume_fp": "40", "close_time": "2026-11-29T03:00:00Z",
+                              "status": "active", "floor_strike": strike})
         rows += kalshi._market_rows(raw_p, "prop", stat)
     return pd.DataFrame(rows), []
 
@@ -220,6 +223,8 @@ bad = {k: v[0] for k, v in results.items() if v[0] == "CRASH"}
 print("\nCRASHES:", bad or "none")
 for k in ("nfl+odds", "nba+odds"):
     lg = results[k][1]
+    print(k, "prop board rows:", [e[1] for e in lg if e[0] == "markdown" and str(e[1]).startswith("#### Most likely props")],
+          "| prop combos:", sum(1 for e in lg if e[0] == "markdown" and str(e[1]).startswith("**Prop combo")))
     print(k, "combo metrics:", [e[2] for e in lg if e[0] == "metric" and e[1] in ("Model hit chance", "Max quote to take")][:6],
           "| combo cards:", sum(1 for e in lg if e[0] == "markdown" and str(e[1]).startswith("**Combo")))
     print(k, "kalshi cards:", sum(1 for e in lg if e[0] == "markdown" and str(e[1]).startswith("#### Buy")),
@@ -245,4 +250,7 @@ for k in ("nfl+odds", "nba+odds", "nba+dfs"):
           "| downloads:", [e[1] for e in log if e[0] == "download"],
           "| 2x3x cards:", count(log, "markdown", "#### "), "| 2x3x caption:", [e[1][:40] for e in log if e[0] == "caption" and "plays ·" in e[1]],
           "| props captions:", [e[1][:70] for e in log if e[0] == "caption" and "props shown" in e[1]])
+
+for k in ("nfl+odds", "nba+odds"):
+    print(k, "PROPS-TAB MSGS:", [e for e in results[k][1] if e[0] in ("info", "warning") and ("prop" in str(e[1]).lower() or "Kalshi" in str(e[1]))][:5])
 sys.exit(1 if bad else 0)

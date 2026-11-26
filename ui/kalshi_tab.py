@@ -19,7 +19,8 @@ def _cents(x) -> str:
 
 
 def kalshi_tab(sport: str, ctx: dict, preds: pd.DataFrame):
-    st.caption("Live Kalshi prices compared with the model. A contract's price is the market's probability "
+    st.caption("Game markets (winner, spread, total). Player props are in the **Kalshi props** tab. "
+               "Live Kalshi prices compared with the model. A contract's price is the market's probability "
                "(62¢ = 62%). **EV** is your expected profit per $1 contract *after* Kalshi's fee — taker fee is "
                "0.07 × P × (1−P), up to 1.75¢ at 50¢. No account or API key needed.")
     mk, warns = loaders.kalshi_markets(sport)
@@ -29,11 +30,9 @@ def kalshi_tab(sport: str, ctx: dict, preds: pd.DataFrame):
         st.info("Kalshi has no open markets for this sport right now.")
         return
     projs = []
-    if sport in ("nfl", "nba"):
-        stats = tuple(sorted(set(mk.loc[mk["kind"] == "prop", "stat"].dropna())))
-        if stats:
-            projs = loaders.projections_for(ctx, stats)
     edges = kalshi.score_markets(mk, preds, get_config(sport), sport, projs)
+    if not edges.empty:
+        edges = edges[edges["kind"] != "prop"]          # player props have their own tab
     if edges.empty:
         st.info(f"Kalshi lists {len(mk)} {sport.upper()} contracts, but none match games on this slate yet.")
         return
