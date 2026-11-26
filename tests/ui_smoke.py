@@ -177,6 +177,15 @@ loaders.x_posts = lambda sport, handles, hours: (pd.DataFrame({
     "id": ["9"], "url": ["https://x.com/i/web/status/9"], "time": [pd.Timestamp.now(tz="UTC")],
     "text": [f"{phi_rb['name']} has been ruled out for Sunday."]}), [])
 st.session_state["nfl_mark_out"] = [phi_rb["name"]]
+# preselect two combo legs for the first matched NFL game
+from engine import combos as _combos, kalshi as _kalshi
+_mk, _ = fake_kalshi("nfl")
+_edges = _kalshi.score_markets(_mk, nfl_base["predictions"], __import__("engine.config", fromlist=["get_config"]).get_config("nfl"),
+                               "nfl", loaders.projections_for(nfl_base, ("receiving_yards",)))
+_g = _edges.drop_duplicates("game_key").sort_values("game").iloc[0]
+_opts = _combos.leg_options(_edges, _g["game_key"])
+_opts = _opts.assign(label=_opts["label"] + _opts["suspect"].map({True: " ⚠️", False: ""}))
+st.session_state["nfl_cb_legs"] = list(_opts.drop_duplicates("ticker")["label"].head(3))
 results["nfl+odds"] = run("pages/1_NFL.py", "nfl (odds key + news + override)")
 results["nba+odds"] = run("pages/2_NBA.py", "nba (odds key)")
 
@@ -211,6 +220,8 @@ bad = {k: v[0] for k, v in results.items() if v[0] == "CRASH"}
 print("\nCRASHES:", bad or "none")
 for k in ("nfl+odds", "nba+odds"):
     lg = results[k][1]
+    print(k, "combo metrics:", [e[2] for e in lg if e[0] == "metric" and e[1] in ("Model hit chance", "Max quote to take")][:6],
+          "| combo cards:", sum(1 for e in lg if e[0] == "markdown" and str(e[1]).startswith("**Combo")))
     print(k, "kalshi cards:", sum(1 for e in lg if e[0] == "markdown" and str(e[1]).startswith("#### Buy")),
           "| kalshi caption:", [e[1][:60] for e in lg if e[0] == "caption" and "matched contracts shown" in e[1]])
 log = results["nfl+odds"][1]

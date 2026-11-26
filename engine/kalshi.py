@@ -306,14 +306,14 @@ def score_markets(markets: pd.DataFrame, preds: pd.DataFrame, cfg, sport: str,
         home_name = r.get("home_name") or r["home"]
         away_name = r.get("away_name") or r["away"]
         game = f"{away_name} @ {home_name}"
-        p_yes, detail = None, ""
+        p_yes, detail, team_side, pnorm = None, "", None, None
         if m["kind"] == "game":
-            side = codes.get(m["code"])
+            side = team_side = codes.get(m["code"])
             if side:
                 p_yes = r["home_win"] if side == "home" else r["away_win"]
                 detail = f"model {r['model_away_pts']:.0f}–{r['model_home_pts']:.0f}"
         elif m["kind"] == "spread" and np.isfinite(m["strike"]):
-            side = codes.get(m["code"])
+            side = team_side = codes.get(m["code"])
             if side:
                 team_margin = r["model_margin"] if side == "home" else -r["model_margin"]
                 p_yes = float(norm.sf(m["strike"], team_margin, cfg.margin_sigma))
@@ -322,7 +322,8 @@ def score_markets(markets: pd.DataFrame, preds: pd.DataFrame, cfg, sport: str,
             p_yes = float(norm.sf(m["strike"], r["model_total"], cfg.total_sigma))
             detail = f"model total {r['model_total']:.1f}"
         elif m["kind"] == "prop" and np.isfinite(m["strike"]) and title_matches_stat(m["stat"], m["title"]):
-            pr = proj_idx.get((norm_name(m["name"]), m["stat"]))
+            pnorm = norm_name(m["name"])
+            pr = proj_idx.get((pnorm, m["stat"]))
             if pr is not None and pr["team"] in (r["home"], r["away"]):
                 p_yes = pr["dist"].prob_over(m["strike"])
                 detail = f"proj {pr['median']:.1f}"
@@ -349,6 +350,9 @@ def score_markets(markets: pd.DataFrame, preds: pd.DataFrame, cfg, sport: str,
             # The market is usually right. A huge disagreement almost always means the model is missing
             # something (injury, wrong stat, stale data) — never show these as top plays by default.
             "suspect": bool(abs(prob - price) > SUSPECT_EDGE),
+            # for the same-game combo builder
+            "game_key": m["game_key"], "home": r["home"], "away": r["away"], "team_side": team_side,
+            "strike": m["strike"], "player_norm": pnorm, "p_yes": p_yes, "yes_ask": ask, "yes_bid": bid,
         })
     out = pd.DataFrame(rows)
     return out.sort_values("ev_taker", ascending=False).reset_index(drop=True) if not out.empty else out
