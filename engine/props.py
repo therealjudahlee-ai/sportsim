@@ -303,6 +303,8 @@ MARKET_MIN = {
         "receiving_yards": 12.0,
         "receptions": 1.8,
         "anytime_td": 0.08,       # expected TDs (~8% chance) — long shots still get priced
+        "rushing_tds": 0.12,
+        "receiving_tds": 0.12,
     },
     "nba": {
         "PTS": 7.0, "REB": 3.0, "AST": 2.0, "FG3M": 0.8, "PRA": 12.0, "PR": 10.0, "PA": 9.0,
@@ -311,10 +313,10 @@ MARKET_MIN = {
 }
 # position gates on top of the volume floors
 NFL_POS_MARKETS = {
-    "QB": {"passing_yards", "passing_tds", "rushing_yards", "anytime_td"},
-    "RB": {"rushing_yards", "receiving_yards", "receptions", "anytime_td"},
-    "WR": {"receiving_yards", "receptions", "anytime_td", "rushing_yards"},
-    "TE": {"receiving_yards", "receptions", "anytime_td"},
+    "QB": {"passing_yards", "passing_tds", "rushing_yards", "anytime_td", "rushing_tds"},
+    "RB": {"rushing_yards", "receiving_yards", "receptions", "anytime_td", "rushing_tds", "receiving_tds"},
+    "WR": {"receiving_yards", "receptions", "anytime_td", "rushing_yards", "receiving_tds"},
+    "TE": {"receiving_yards", "receptions", "anytime_td", "receiving_tds"},
 }
 
 

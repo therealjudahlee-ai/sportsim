@@ -31,7 +31,7 @@ SERIES = {
     "nba": {"game": ["KXNBAGAME"], "spread": ["KXNBASPREAD"], "total": ["KXNBATOTAL"],
             "props": {"KXNBAPTS": "PTS", "KXNBAREB": "REB", "KXNBAAST": "AST", "KXNBA3PT": "FG3M"}},
     "nfl": {"game": ["KXNFLGAME"], "spread": ["KXNFLSPREAD"], "total": ["KXNFLTOTAL"],
-            "props": {"KXNFLPASSYDS": "passing_yards", "KXNFLRSHYDS": "rushing_yards",
+            "props": {"KXNFLPASSYDS": "passing_yards", "KXNFLPASSTDS": "passing_tds", "KXNFLRSHYDS": "rushing_yards",
                       "KXNFLRECYDS": "receiving_yards", "KXNFLREC": "receptions"}},
     "ncaab": {"game": ["KXNCAAMBGAME"], "spread": ["KXNCAAMBSPREAD"], "total": ["KXNCAAMBTOTAL"], "props": {}},
     "ncaaf": {"game": ["KXNCAAFGAME"], "spread": ["KXNCAAFSPREAD"], "total": ["KXNCAAFTOTAL"], "props": {}},
@@ -39,11 +39,35 @@ SERIES = {
 PREFIX = {"nba": "KXNBA", "nfl": "KXNFL", "ncaab": "KXNCAAMB", "ncaaf": "KXNCAAF"}
 # title keywords -> our stat names, for discovering prop series we haven't hard-coded
 PROP_KEYWORDS = {
-    "nba": [("three", "FG3M"), ("3-point", "FG3M"), ("rebound", "REB"), ("assist", "AST"), ("points", "PTS")],
-    "nfl": [("passing yard", "passing_yards"), ("rushing yard", "rushing_yards"),
-            ("receiving yard", "receiving_yards"), ("reception", "receptions"),
-            ("touchdown", "anytime_td"), ("passing td", "passing_tds")],
+    # ORDER MATTERS: most specific phrases first ("passing touchdowns" must never become "anytime TD")
+    "nba": [("three", "FG3M"), ("3-point", "FG3M"), ("rebound", "REB"), ("assist", "AST"), ("steal", "STL"),
+            ("block", "BLK"), ("points", "PTS")],
+    "nfl": [("passing touchdown", "passing_tds"), ("passing td", "passing_tds"),
+            ("rushing touchdown", "rushing_tds"), ("receiving touchdown", "receiving_tds"),
+            ("anytime touchdown", "anytime_td"), ("touchdown scorer", "anytime_td"),
+            ("passing yard", "passing_yards"), ("rushing yard", "rushing_yards"),
+            ("receiving yard", "receiving_yards"), ("reception", "receptions")],
 }
+# Every prop contract's title must also mention its stat, or it's skipped (belt and braces)
+STAT_TITLE = {
+    "passing_tds": (("pass",), ("touchdown", "td")), "rushing_tds": (("rush",), ("touchdown", "td")),
+    "receiving_tds": (("receiv",), ("touchdown", "td")), "passing_yards": (("pass",), ("yard",)),
+    "rushing_yards": (("rush",), ("yard",)), "receiving_yards": (("receiv",), ("yard",)),
+    "receptions": (("reception", "catch"),), "anytime_td": (("touchdown", "td"),),
+    "PTS": (("point",),), "REB": (("rebound",),), "AST": (("assist",),), "FG3M": (("three", "3pt", "3-pt", "3-point"),),
+    "STL": (("steal",),), "BLK": (("block",),),
+}
+STAT_TITLE_FORBID = {"anytime_td": ("pass",), "PTS": ("three", "3-point", "rebound", "assist"),
+                     "rushing_yards": ("pass", "receiv"), "receiving_yards": ("pass", "rush")}
+
+
+def title_matches_stat(stat: str, title: str) -> bool:
+    t = str(title).lower()
+    if any(w in t for w in STAT_TITLE_FORBID.get(stat, ())):
+        return False
+    return all(any(w in t for w in group) for group in STAT_TITLE.get(stat, ()))
+
+
 EXCLUDE_WORDS = ("leader", "career", "season", "mvp", "award", "draft", "quarter", "half", "range", "precise",
                  "combo", "parlay", "first", "series", "playoff", "champion", "week", "total wins")
 
@@ -261,6 +285,9 @@ def match_games(markets: pd.DataFrame, preds: pd.DataFrame, sport: str) -> dict:
 # =============================================================================
 # model probability for each contract + value after fees
 # =============================================================================
+SUSPECT_EDGE = 0.20          # model vs price gap (probability points) treated as "check before trusting"
+
+
 def score_markets(markets: pd.DataFrame, preds: pd.DataFrame, cfg, sport: str,
                   projections: list[dict] | None = None, max_spread: float = 0.25) -> pd.DataFrame:
     """One row per contract with the better side (YES or NO), model probability, and EV after fees."""
@@ -294,7 +321,7 @@ def score_markets(markets: pd.DataFrame, preds: pd.DataFrame, cfg, sport: str,
         elif m["kind"] == "total" and np.isfinite(m["strike"]):
             p_yes = float(norm.sf(m["strike"], r["model_total"], cfg.total_sigma))
             detail = f"model total {r['model_total']:.1f}"
-        elif m["kind"] == "prop" and np.isfinite(m["strike"]):
+        elif m["kind"] == "prop" and np.isfinite(m["strike"]) and title_matches_stat(m["stat"], m["title"]):
             pr = proj_idx.get((norm_name(m["name"]), m["stat"]))
             if pr is not None and pr["team"] in (r["home"], r["away"]):
                 p_yes = pr["dist"].prob_over(m["strike"])
@@ -319,6 +346,9 @@ def score_markets(markets: pd.DataFrame, preds: pd.DataFrame, cfg, sport: str,
             "fee": float(taker_fee(price)), "spread_width": width, "volume": m["volume"],
             "detail": detail, "ticker": m["ticker"], "close_time": m["close_time"], "date": m["date"],
             "liquid": bool(np.isfinite(width) and width <= max_spread),
+            # The market is usually right. A huge disagreement almost always means the model is missing
+            # something (injury, wrong stat, stale data) — never show these as top plays by default.
+            "suspect": bool(abs(prob - price) > SUSPECT_EDGE),
         })
     out = pd.DataFrame(rows)
     return out.sort_values("ev_taker", ascending=False).reset_index(drop=True) if not out.empty else out
@@ -328,13 +358,18 @@ def score_markets(markets: pd.DataFrame, preds: pd.DataFrame, cfg, sport: str,
 # optional: read YOUR settled positions (needs a Kalshi API key)
 # =============================================================================
 def normalize_pem(text: str) -> str:
-    """Rebuild a PEM key pasted in any shape (one line, spaces instead of line breaks,
-    END marker on the same line as the key, literal \\n) into the strict format crypto libraries need."""
-    t = str(text).replace("\\n", "\n").strip().strip('"').strip("'")
-    m = re.search(r"-----BEGIN ([A-Z ]+)-----(.*?)-----END \1-----", t, re.S)
-    if not m:
-        return t
-    label, body = m.group(1), re.sub(r"\s+", "", m.group(2))
+    """Rebuild a PEM key pasted in any shape (one line, spaces instead of line breaks, END marker on the
+    key's last line, literal \\n, smart quotes, missing BEGIN/END lines) into the strict PEM format."""
+    t = str(text).replace("\\n", "\n").replace("\r", "")
+    t = t.replace("\u2013", "-").replace("\u2014", "-").replace("\u2212", "-")    # dashes mangled by copy/paste
+    t = t.strip().strip('"').strip("'").strip()
+    begin = re.search(r"-+\s*BEGIN ([A-Z0-9 ]+?)\s*-+", t)
+    end = re.search(r"-+\s*END ([A-Z0-9 ]+?)\s*-+", t)
+    if begin and end and end.start() > begin.end():
+        label, body = begin.group(1).strip(), t[begin.end():end.start()]
+    else:                                   # just the base64 body was pasted
+        label, body = "PRIVATE KEY", t
+    body = re.sub(r"[^A-Za-z0-9+/=]", "", body)
     lines = [body[i:i + 64] for i in range(0, len(body), 64)]
     return f"-----BEGIN {label}-----\n" + "\n".join(lines) + f"\n-----END {label}-----\n"
 
@@ -343,7 +378,11 @@ def _sign(private_key_pem: str, message: str) -> str:
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import ed25519, padding, rsa
 
-    key = serialization.load_pem_private_key(normalize_pem(private_key_pem).encode(), password=None)
+    try:
+        key = serialization.load_pem_private_key(normalize_pem(private_key_pem).encode(), password=None)
+    except Exception as e:
+        raise ValueError("Couldn't read KALSHI_PRIVATE_KEY. Paste the whole private key from Kalshi (including "
+                         "the BEGIN/END lines) between triple quotes in your Streamlit secrets.") from e
     data = message.encode()
     if isinstance(key, ed25519.Ed25519PrivateKey):
         sig = key.sign(data)
@@ -373,8 +412,12 @@ def fetch_settlements(key_id: str, private_key_pem: str, diag: Diagnostics | Non
         if cursor:
             params["cursor"] = cursor
         try:
-            r = http().get(f"{BASE}/portfolio/settlements", params=params, timeout=15,
-                           headers=auth_headers(key_id, private_key_pem, "GET", path))
+            headers = auth_headers(key_id, private_key_pem, "GET", path)
+        except ValueError as e:
+            diag.warn(str(e))
+            break
+        try:
+            r = http().get(f"{BASE}/portfolio/settlements", params=params, timeout=15, headers=headers)
             if r.status_code in (401, 403):
                 diag.warn("Kalshi rejected the API key (check KALSHI_KEY_ID / KALSHI_PRIVATE_KEY)")
                 break

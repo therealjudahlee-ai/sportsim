@@ -224,3 +224,61 @@ def test_normalize_pem_handles_messy_paste():
         for m in messy:
             h = kalshi.auth_headers("kid", m, "GET", "/trade-api/v2/portfolio/settlements")
             assert h["KALSHI-ACCESS-SIGNATURE"]
+
+
+def test_passing_td_market_is_not_anytime_td(monkeypatch):
+    """Regression: 'Joe Burrow: 1+ passing touchdowns' was scored as Burrow scoring a TD himself."""
+    class R:
+        status_code = 200
+        def raise_for_status(self): pass
+        def json(self):
+            return {"series": [{"ticker": "KXNFLPASSTDS", "title": "Pro Football Passing Touchdowns"},
+                               {"ticker": "KXNFLRSHTDS", "title": "Pro Football Rushing Touchdowns"},
+                               {"ticker": "KXNFLXTD", "title": "Pro Football Touchdowns"}]}
+    monkeypatch.setattr(kalshi, "http", lambda: type("S", (), {"get": lambda self, *a, **k: R()})())
+    s = kalshi.discover_series("nfl")
+    assert s["props"]["KXNFLPASSTDS"] == "passing_tds"
+    assert s["props"]["KXNFLRSHTDS"] == "rushing_tds"
+    assert "KXNFLXTD" not in s["props"]            # ambiguous "touchdowns" is never guessed
+    assert kalshi.title_matches_stat("passing_tds", "Joe Burrow: 1+ passing touchdowns")
+    assert not kalshi.title_matches_stat("anytime_td", "Joe Burrow: 1+ passing touchdowns")
+    assert not kalshi.title_matches_stat("PTS", "Steph Curry: 5+ three pointers")
+
+
+def test_burrow_scored_sensibly_and_suspects_flagged():
+    g = "26NOV29NOCIN"
+    rows = kalshi._market_rows([
+        _m(f"KXNFLGAME-{g}-CIN", f"KXNFLGAME-{g}", "Cincinnati wins", "Cincinnati", .6, .62),
+        _m(f"KXNFLGAME-{g}-NO", f"KXNFLGAME-{g}", "New Orleans wins", "New Orleans", .37, .4)], "game")
+    rows += kalshi._market_rows([
+        _m(f"KXNFLPASSTDS-{g}-CINJBURROW9-1", f"KXNFLPASSTDS-{g}", "Joe Burrow: 1+ passing touchdowns",
+           "Joe Burrow: 1+", .90, .94, 0.5)], "prop", "passing_tds")
+    rows += kalshi._market_rows([   # wrongly-mapped stat: title says passing, stat says anytime -> skipped
+        _m(f"KXNFLPASSTDS-{g}-CINJBURROW9-2", f"KXNFLPASSTDS-{g}", "Joe Burrow: 2+ passing touchdowns",
+           "Joe Burrow: 2+", .55, .60, 1.5)], "prop", "anytime_td")
+    preds = pd.DataFrame([{"home": "CIN", "away": "NO", "home_win": .62, "away_win": .38, "model_margin": 3,
+                           "model_total": 47, "model_home_pts": 25, "model_away_pts": 22}])
+    burrow_pass = {"player": "Joe Burrow", "player_norm": "joe burrow", "stat": "passing_tds", "team": "CIN",
+                   "median": 2.0, "dist": StatDist("nbinom", 1.9, 2.1)}
+    burrow_any = dict(burrow_pass, stat="anytime_td", median=0.0, dist=StatDist("poisson", 0.1, 0.1))
+    out = kalshi.score_markets(pd.DataFrame(rows), preds, DEFAULTS["nfl"], "nfl", [burrow_pass, burrow_any])
+    props = out[out["kind"] == "prop"]
+    assert len(props) == 1                                   # the mis-mapped one is dropped
+    p = props.iloc[0]
+    assert abs((p["model_prob"] if p["side"] == "YES" else 1 - p["model_prob"]) - burrow_pass["dist"].prob_over(0.5)) < 1e-9
+    assert not p["suspect"]
+    wild = kalshi.score_markets(pd.DataFrame(rows), preds.assign(home_win=.99, away_win=.01),
+                                DEFAULTS["nfl"], "nfl", [burrow_pass])
+    assert wild[(wild["kind"] == "game")]["suspect"].any()   # 99% vs 62c -> flagged
+
+
+def test_pem_bare_body_and_dashes():
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+    pem = ed25519.Ed25519PrivateKey.generate().private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode()
+    body = "".join(pem.strip().splitlines()[1:-1])
+    for m in (body, pem.replace("-----", "–––––")):
+        assert kalshi.auth_headers("kid", m, "GET", "/x")["KALSHI-ACCESS-SIGNATURE"]
+    with pytest.raises(ValueError, match="Couldn't read KALSHI_PRIVATE_KEY"):
+        kalshi.auth_headers("kid", "not a key at all", "GET", "/x")

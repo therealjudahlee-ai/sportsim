@@ -45,19 +45,27 @@ def kalshi_tab(sport: str, ctx: dict, preds: pd.DataFrame):
     max_w = c3.slider("Max bid/ask gap (¢)", 1, 50, 15, key=f"{sport}_k_gap",
                       help="Wide gaps mean thin markets — the price you see may not fill.") / 100
     n_cards = c4.number_input("Top plays", 1, 30, 8, key=f"{sport}_k_n")
-    t1, t2 = st.columns(2)
+    t1, t2, t3, t4 = st.columns([2, 1, 1.2, 1.2])
     game = t1.selectbox("Game", ["All"] + sorted(edges["game"].unique()), key=f"{sport}_k_game")
-    one_per = t2.toggle("Best contract per game/player", True, key=f"{sport}_k_one")
+    min_vol = t2.number_input("Min volume", 0, 100000, 25, step=25, key=f"{sport}_k_vol",
+                              help="Contracts nobody has traded have meaningless prices.")
+    one_per = t3.toggle("Best contract per game/player", True, key=f"{sport}_k_one")
+    show_sus = t4.toggle("Show huge disagreements", False, key=f"{sport}_k_sus",
+                         help="When the model and Kalshi disagree by 20+ points, the model is usually missing "
+                              "something (injury, stale data, a market it misread). Hidden by default.")
 
     e = edges[edges["kind"].isin(pick) & (edges["ev_taker"] >= min_ev)
-              & (edges["spread_width"].fillna(1) <= max_w)]
+              & (edges["spread_width"].fillna(1) <= max_w) & (edges["volume"].fillna(0) >= min_vol)]
+    if not show_sus:
+        e = e[~e["suspect"]]
     if game != "All":
         e = e[e["game"] == game]
     if one_per:
         e = e.assign(_k=e["game"] + "|" + e["kind"] + "|" + e["contract"].str.split(":").str[0]) \
              .drop_duplicates("_k").drop(columns="_k")
-    st.caption(f"{len(e)} of {len(edges)} matched contracts shown · prices refresh every 90 s · "
-               "your fill can differ from the displayed ask")
+    n_sus = int(edges["suspect"].sum())
+    st.caption(f"{len(e)} of {len(edges)} matched contracts shown · {n_sus} hidden as huge disagreements · "
+               "prices refresh every 90 s · your fill can differ from the displayed ask")
     if e.empty:
         st.info("Nothing clears your filters. Try a lower minimum EV or a wider bid/ask gap.")
     for i, (_, r) in enumerate(e.head(int(n_cards)).iterrows()):
@@ -73,7 +81,8 @@ def kalshi_tab(sport: str, ctx: dict, preds: pd.DataFrame):
                      help="Taker = buying at the ask right now. Limit (maker) orders pay a quarter of the fee "
                           "if someone fills them.")
             d.metric("Market", f"gap {_cents(r['spread_width'])}", delta=f"vol {r['volume']:,.0f}", delta_color="off")
-            st.caption(f"{r['detail']} · `{r['ticker']}`")
+            warn = " · ⚠️ huge disagreement with the market — check news before trusting" if r["suspect"] else ""
+            st.caption(f"{r['detail']} · `{r['ticker']}`{warn}")
 
     with st.expander("All matched contracts"):
         show = edges.copy()

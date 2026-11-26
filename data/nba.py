@@ -33,8 +33,8 @@ def _from_nba_api(start_year: int, diag: Diagnostics) -> pd.DataFrame | None:
         df["POS"] = ""
         return df
     except Exception as e:
-        diag.warn(f"nba_api failed for {start_year}-{start_year + 1} (stats.nba.com often blocks cloud servers); "
-                  "falling back to ESPN data", e)
+        diag.note(f"stats.nba.com unavailable for {start_year}-{start_year + 1} ({type(e).__name__}); "
+                  "using ESPN data instead (normal on cloud servers)")
         return None
 
 
@@ -146,7 +146,7 @@ def build_context(date_str: str, diag: Diagnostics | None = None) -> dict:
         for side in ("home", "away"):
             sb[f"{side}_rest"] = sb[side].map(lambda t: (target - last[t]).days if t in last.index else np.nan)
     else:
-        diag.warn(f"No NBA games found for {date_str}")
+        diag.note(f"No NBA games scheduled on {date_str}")
 
     # ---------------- injuries (applied in _finalize so news/overrides can re-run it)
     inj = espn.injuries("basketball/nba", diag)

@@ -24,13 +24,17 @@ COLS = ["logged_at", "sport", "kind", "stat", "game", "contract", "ticker", "sid
 
 
 def log_edges(edges: pd.DataFrame, logged_at, min_ev: float = 0.02, liquid_only: bool = True,
-              path: Path | None = None) -> int:
+              min_volume: float = 25, path: Path | None = None) -> int:
     path = path or EDGES_PATH
     if edges is None or edges.empty:
         return 0
     e = edges[edges["ev_taker"] >= min_ev]
     if liquid_only and "liquid" in e.columns:
         e = e[e["liquid"]]
+    if "suspect" in e.columns:
+        e = e[~e["suspect"]]
+    if "volume" in e.columns:
+        e = e[e["volume"].fillna(0) >= min_volume]
     if e.empty:
         return 0
     e = e.copy()

@@ -382,10 +382,13 @@ def project_player(ctx: dict, player_id, stat: str, bump: float = 1.0, opp: str 
 
 def all_projections(ctx: dict, stats: list[str], include_out: bool = False, markets_only: bool = True) -> list[dict]:
     """markets_only: drop player/stat combos books don't realistically post (see engine.props.MARKET_MIN)."""
-    pos_stats = {"QB": {"passing_yards", "rushing_yards", "passing_tds", "anytime_td", "dk_points", "fd_points"},
-                 "RB": {"rushing_yards", "receiving_yards", "receptions", "anytime_td", "dk_points", "fd_points"},
-                 "WR": {"receiving_yards", "receptions", "anytime_td", "dk_points", "fd_points", "rushing_yards"},
-                 "TE": {"receiving_yards", "receptions", "anytime_td", "dk_points", "fd_points"}}
+    pos_stats = {"QB": {"passing_yards", "rushing_yards", "passing_tds", "anytime_td", "rushing_tds", "dk_points",
+                        "fd_points"},
+                 "RB": {"rushing_yards", "receiving_yards", "receptions", "anytime_td", "rushing_tds", "receiving_tds",
+                        "dk_points", "fd_points"},
+                 "WR": {"receiving_yards", "receptions", "anytime_td", "receiving_tds", "dk_points", "fd_points",
+                        "rushing_yards"},
+                 "TE": {"receiving_yards", "receptions", "anytime_td", "receiving_tds", "dk_points", "fd_points"}}
     out = []
     for _, p in ctx["players"].iterrows():
         if not include_out and p["status"] and espn.status_weight(p["status"]) >= 0.75:

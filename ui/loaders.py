@@ -187,8 +187,21 @@ def kalshi_keys() -> tuple[str, str]:
 
 
 @st.cache_data(ttl=10 * 60, show_spinner="Loading your Kalshi settlements…")
-def kalshi_settlements() -> tuple[pd.DataFrame, list]:
+def _kalshi_settlements_cached(kid: str, key_fingerprint: str) -> pd.DataFrame:
+    """Raises on failure so Streamlit does NOT cache errors (fix the key and it works immediately)."""
     from engine import kalshi
-    kid, pem = kalshi_keys()
     diag = Diagnostics()
-    return kalshi.fetch_settlements(kid, pem, diag), diag.warnings
+    df = kalshi.fetch_settlements(kid, kalshi_keys()[1], diag)
+    if diag.warnings:
+        raise RuntimeError(diag.warnings[0])
+    return df
+
+
+def kalshi_settlements() -> tuple[pd.DataFrame, list]:
+    import hashlib
+    kid, pem = kalshi_keys()
+    fp = hashlib.sha256(pem.encode()).hexdigest()[:16]   # re-fetch automatically when the key changes
+    try:
+        return _kalshi_settlements_cached(kid, fp), []
+    except Exception as e:
+        return pd.DataFrame(), [str(e)]
