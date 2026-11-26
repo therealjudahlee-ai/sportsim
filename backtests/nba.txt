@@ -1,0 +1,70 @@
+INFO sportsim: stats.nba.com unavailable for 2023-2024 (ReadTimeout); using ESPN data instead (normal on cloud servers)
+INFO sportsim: NBA 2023-2024: 26548 player-games from espn
+INFO sportsim: stats.nba.com unavailable for 2024-2025 (ReadTimeout); using ESPN data instead (normal on cloud servers)
+INFO sportsim: NBA 2024-2025: 26444 player-games from espn
+INFO sportsim: stats.nba.com unavailable for 2025-2026 (ReadTimeout); using ESPN data instead (normal on cloud servers)
+INFO sportsim: NBA 2025-2026: 26743 player-games from espn
+nba: 3701 games loaded; evaluating seasons [2025, 2026]
+  [round 1] {'half_life_days': 22.5, 'ridge_alpha': 4.0, 'prior_regress': 0.49999999999999994} -> margin RMSE 14.350  (1s)
+  [round 1] {'half_life_days': 22.5, 'ridge_alpha': 4.0, 'prior_regress': 0.7} -> margin RMSE 14.356  (3s)
+  [round 1] {'half_life_days': 22.5, 'ridge_alpha': 4.0, 'prior_regress': 0.85} -> margin RMSE 14.373  (4s)
+  [round 1] {'half_life_days': 22.5, 'ridge_alpha': 8.0, 'prior_regress': 0.49999999999999994} -> margin RMSE 14.425  (6s)
+  [round 1] {'half_life_days': 22.5, 'ridge_alpha': 8.0, 'prior_regress': 0.7} -> margin RMSE 14.426  (7s)
+  [round 1] {'half_life_days': 22.5, 'ridge_alpha': 8.0, 'prior_regress': 0.85} -> margin RMSE 14.447  (8s)
+  [round 1] {'half_life_days': 22.5, 'ridge_alpha': 16.0, 'prior_regress': 0.49999999999999994} -> margin RMSE 14.653  (10s)
+  [round 1] {'half_life_days': 22.5, 'ridge_alpha': 16.0, 'prior_regress': 0.7} -> margin RMSE 14.632  (11s)
+  [round 1] {'half_life_days': 22.5, 'ridge_alpha': 16.0, 'prior_regress': 0.85} -> margin RMSE 14.641  (13s)
+  [round 1] {'half_life_days': 45.0, 'ridge_alpha': 4.0, 'prior_regress': 0.49999999999999994} -> margin RMSE 14.333  (14s)
+  [round 1] {'half_life_days': 45.0, 'ridge_alpha': 4.0, 'prior_regress': 0.7} -> margin RMSE 14.335  (15s)
+  [round 1] {'half_life_days': 45.0, 'ridge_alpha': 4.0, 'prior_regress': 0.85} -> margin RMSE 14.344  (17s)
+  [round 1] {'half_life_days': 45.0, 'ridge_alpha': 8.0, 'prior_regress': 0.49999999999999994} -> margin RMSE 14.361  (18s)
+  [round 1] {'half_life_days': 45.0, 'ridge_alpha': 8.0, 'prior_regress': 0.7} -> margin RMSE 14.360  (20s)
+  [round 1] {'half_life_days': 45.0, 'ridge_alpha': 8.0, 'prior_regress': 0.85} -> margin RMSE 14.374  (21s)
+  [round 1] {'half_life_days': 45.0, 'ridge_alpha': 16.0, 'prior_regress': 0.49999999999999994} -> margin RMSE 14.500  (23s)
+  [round 1] {'half_life_days': 45.0, 'ridge_alpha': 16.0, 'prior_regress': 0.7} -> margin RMSE 14.486  (24s)
+  [round 1] {'half_life_days': 45.0, 'ridge_alpha': 16.0, 'prior_regress': 0.85} -> margin RMSE 14.497  (25s)
+  [round 1] {'half_life_days': 90.0, 'ridge_alpha': 4.0, 'prior_regress': 0.49999999999999994} -> margin RMSE 14.355  (27s)
+  [round 1] {'half_life_days': 90.0, 'ridge_alpha': 4.0, 'prior_regress': 0.7} -> margin RMSE 14.356  (28s)
+  [round 1] {'half_life_days': 90.0, 'ridge_alpha': 4.0, 'prior_regress': 0.85} -> margin RMSE 14.363  (30s)
+  [round 1] {'half_life_days': 90.0, 'ridge_alpha': 8.0, 'prior_regress': 0.49999999999999994} -> margin RMSE 14.360  (31s)
+  [round 1] {'half_life_days': 90.0, 'ridge_alpha': 8.0, 'prior_regress': 0.7} -> margin RMSE 14.359  (32s)
+  [round 1] {'half_life_days': 90.0, 'ridge_alpha': 8.0, 'prior_regress': 0.85} -> margin RMSE 14.370  (34s)
+  [round 1] {'half_life_days': 90.0, 'ridge_alpha': 16.0, 'prior_regress': 0.49999999999999994} -> margin RMSE 14.450  (35s)
+  [round 1] {'half_life_days': 90.0, 'ridge_alpha': 16.0, 'prior_regress': 0.7} -> margin RMSE 14.440  (37s)
+  [round 1] {'half_life_days': 90.0, 'ridge_alpha': 16.0, 'prior_regress': 0.85} -> margin RMSE 14.452  (38s)
+  best was on the edge of the range; searching further: {'half_life_days': [45.0], 'ridge_alpha': [2.0, 4.0], 'prior_regress': [0.35, 0.5]}
+  [round 2] {'half_life_days': 45.0, 'ridge_alpha': 2.0, 'prior_regress': 0.35} -> margin RMSE 14.370  (39s)
+  [round 2] {'half_life_days': 45.0, 'ridge_alpha': 2.0, 'prior_regress': 0.5} -> margin RMSE 14.367  (41s)
+  [round 2] {'half_life_days': 45.0, 'ridge_alpha': 4.0, 'prior_regress': 0.35} -> margin RMSE 14.339  (42s)
+  best was on the edge of the range; searching further: {'half_life_days': [45.0, 90.0], 'ridge_alpha': [4.0, 8.0], 'prior_regress': [0.5]}
+  best was on the edge of the range; searching further: {'half_life_days': [22.5, 45.0], 'ridge_alpha': [2.0, 4.0], 'prior_regress': [0.5]}
+  [round 4] {'half_life_days': 22.5, 'ridge_alpha': 2.0, 'prior_regress': 0.5} -> margin RMSE 14.373  (44s)
+  best was on the edge of the range; searching further: {'half_life_days': [45.0, 90.0], 'ridge_alpha': [4.0, 8.0], 'prior_regress': [0.5]}
+
+Top settings:
+  half_life_days  ridge_alpha  prior_regress  margin_rmse    n
+           45.0          4.0           0.50    14.332787 2434
+           45.0          4.0           0.70    14.334911 2434
+           45.0          4.0           0.35    14.338871 2434
+           45.0          4.0           0.85    14.344467 2434
+           22.5          4.0           0.50    14.349557 2434
+           90.0          4.0           0.50    14.355491 2434
+           90.0          4.0           0.70    14.355866 2434
+           22.5          4.0           0.70    14.356022 2434
+
+Saved tuned params for nba: {
+  "half_life_days": 45.0,
+  "ridge_alpha": 4.0,
+  "prior_regress": 0.49999999999999994,
+  "margin_sigma": 14.335727417184449,
+  "total_sigma": 18.694984094443
+}
+
+Backtest results:
+  n                                2434
+  margin_mae                       11.2268
+  margin_rmse                      14.3328
+  total_rmse                       18.6912
+  su_accuracy                      0.6783
+  brier                            0.2064
+  logloss                          0.5997

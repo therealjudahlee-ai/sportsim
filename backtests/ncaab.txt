@@ -1,0 +1,78 @@
+INFO sportsim: CBB history: 18825 games across seasons [2024, 2025, 2026]
+ncaab: 18825 games loaded; evaluating seasons [2025, 2026]
+  [round 1] {'half_life_days': 20.0, 'ridge_alpha': 2.5, 'prior_regress': 0.39999999999999997} -> margin RMSE 12.854  (3s)
+  [round 1] {'half_life_days': 20.0, 'ridge_alpha': 2.5, 'prior_regress': 0.6} -> margin RMSE 12.763  (5s)
+  [round 1] {'half_life_days': 20.0, 'ridge_alpha': 2.5, 'prior_regress': 0.75} -> margin RMSE 12.699  (8s)
+  [round 1] {'half_life_days': 20.0, 'ridge_alpha': 5.0, 'prior_regress': 0.39999999999999997} -> margin RMSE 13.218  (11s)
+  [round 1] {'half_life_days': 20.0, 'ridge_alpha': 5.0, 'prior_regress': 0.6} -> margin RMSE 13.126  (14s)
+  [round 1] {'half_life_days': 20.0, 'ridge_alpha': 5.0, 'prior_regress': 0.75} -> margin RMSE 13.061  (16s)
+  [round 1] {'half_life_days': 20.0, 'ridge_alpha': 10.0, 'prior_regress': 0.39999999999999997} -> margin RMSE 13.716  (19s)
+  [round 1] {'half_life_days': 20.0, 'ridge_alpha': 10.0, 'prior_regress': 0.6} -> margin RMSE 13.629  (22s)
+  [round 1] {'half_life_days': 20.0, 'ridge_alpha': 10.0, 'prior_regress': 0.75} -> margin RMSE 13.566  (24s)
+  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 2.5, 'prior_regress': 0.39999999999999997} -> margin RMSE 12.515  (27s)
+  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 2.5, 'prior_regress': 0.6} -> margin RMSE 12.367  (30s)
+  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 2.5, 'prior_regress': 0.75} -> margin RMSE 12.265  (32s)
+  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 5.0, 'prior_regress': 0.39999999999999997} -> margin RMSE 12.840  (35s)
+  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 5.0, 'prior_regress': 0.6} -> margin RMSE 12.685  (38s)
+  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 5.0, 'prior_regress': 0.75} -> margin RMSE 12.579  (40s)
+  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 10.0, 'prior_regress': 0.39999999999999997} -> margin RMSE 13.321  (43s)
+  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 10.0, 'prior_regress': 0.6} -> margin RMSE 13.168  (46s)
+  [round 1] {'half_life_days': 40.0, 'ridge_alpha': 10.0, 'prior_regress': 0.75} -> margin RMSE 13.065  (49s)
+  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 2.5, 'prior_regress': 0.39999999999999997} -> margin RMSE 12.343  (51s)
+  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 2.5, 'prior_regress': 0.6} -> margin RMSE 12.166  (54s)
+  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 2.5, 'prior_regress': 0.75} -> margin RMSE 12.053  (57s)
+  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 5.0, 'prior_regress': 0.39999999999999997} -> margin RMSE 12.605  (59s)
+  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 5.0, 'prior_regress': 0.6} -> margin RMSE 12.403  (62s)
+  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 5.0, 'prior_regress': 0.75} -> margin RMSE 12.269  (65s)
+  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 10.0, 'prior_regress': 0.39999999999999997} -> margin RMSE 13.055  (67s)
+  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 10.0, 'prior_regress': 0.6} -> margin RMSE 12.846  (70s)
+  [round 1] {'half_life_days': 80.0, 'ridge_alpha': 10.0, 'prior_regress': 0.75} -> margin RMSE 12.705  (73s)
+  best was on the edge of the range; searching further: {'half_life_days': [80.0, 160.0], 'ridge_alpha': [1.25, 2.5], 'prior_regress': [0.75, 0.9]}
+  [round 2] {'half_life_days': 80.0, 'ridge_alpha': 1.25, 'prior_regress': 0.75} -> margin RMSE 12.011  (75s)
+  [round 2] {'half_life_days': 80.0, 'ridge_alpha': 1.25, 'prior_regress': 0.9} -> margin RMSE 11.940  (78s)
+  [round 2] {'half_life_days': 80.0, 'ridge_alpha': 2.5, 'prior_regress': 0.9} -> margin RMSE 11.960  (81s)
+  [round 2] {'half_life_days': 160.0, 'ridge_alpha': 1.25, 'prior_regress': 0.75} -> margin RMSE 11.986  (83s)
+  [round 2] {'half_life_days': 160.0, 'ridge_alpha': 1.25, 'prior_regress': 0.9} -> margin RMSE 11.921  (86s)
+  [round 2] {'half_life_days': 160.0, 'ridge_alpha': 2.5, 'prior_regress': 0.75} -> margin RMSE 11.985  (89s)
+  [round 2] {'half_life_days': 160.0, 'ridge_alpha': 2.5, 'prior_regress': 0.9} -> margin RMSE 11.898  (91s)
+  best was on the edge of the range; searching further: {'half_life_days': [160.0, 320.0], 'ridge_alpha': [2.5, 5.0], 'prior_regress': [0.9, 0.95]}
+  [round 3] {'half_life_days': 160.0, 'ridge_alpha': 2.5, 'prior_regress': 0.95} -> margin RMSE 11.876  (94s)
+  [round 3] {'half_life_days': 160.0, 'ridge_alpha': 5.0, 'prior_regress': 0.9} -> margin RMSE 12.019  (97s)
+  [round 3] {'half_life_days': 160.0, 'ridge_alpha': 5.0, 'prior_regress': 0.95} -> margin RMSE 11.989  (99s)
+  [round 3] {'half_life_days': 320.0, 'ridge_alpha': 2.5, 'prior_regress': 0.9} -> margin RMSE 11.880  (102s)
+  [round 3] {'half_life_days': 320.0, 'ridge_alpha': 2.5, 'prior_regress': 0.95} -> margin RMSE 11.860  (104s)
+  [round 3] {'half_life_days': 320.0, 'ridge_alpha': 5.0, 'prior_regress': 0.9} -> margin RMSE 11.966  (107s)
+  [round 3] {'half_life_days': 320.0, 'ridge_alpha': 5.0, 'prior_regress': 0.95} -> margin RMSE 11.937  (110s)
+  best was on the edge of the range; searching further: {'half_life_days': [320.0, 640.0], 'ridge_alpha': [1.25, 2.5], 'prior_regress': [0.95]}
+  [round 4] {'half_life_days': 320.0, 'ridge_alpha': 1.25, 'prior_regress': 0.95} -> margin RMSE 11.907  (112s)
+  [round 4] {'half_life_days': 640.0, 'ridge_alpha': 1.25, 'prior_regress': 0.95} -> margin RMSE 11.909  (115s)
+  [round 4] {'half_life_days': 640.0, 'ridge_alpha': 2.5, 'prior_regress': 0.95} -> margin RMSE 11.855  (117s)
+  best was on the edge of the range; searching further: {'half_life_days': [640.0, 1280.0], 'ridge_alpha': [2.5, 5.0], 'prior_regress': [0.8, 0.95]}
+
+Top settings:
+  half_life_days  ridge_alpha  prior_regress  margin_rmse     n
+          640.0         2.50           0.95    11.854873 10487
+          320.0         2.50           0.95    11.859544 10487
+          160.0         2.50           0.95    11.875552 10487
+          320.0         2.50           0.90    11.880105 10487
+          160.0         2.50           0.90    11.897720 10487
+          320.0         1.25           0.95    11.906665 10487
+          640.0         1.25           0.95    11.909394 10487
+          160.0         1.25           0.90    11.921271 10487
+
+Saved tuned params for ncaab: {
+  "half_life_days": 640.0,
+  "ridge_alpha": 2.5,
+  "prior_regress": 0.95,
+  "margin_sigma": 11.842220751529002,
+  "total_sigma": 17.123667539845794
+}
+
+Backtest results:
+  n                                10487
+  margin_mae                       9.3257
+  margin_rmse                      11.8549
+  total_rmse                       17.1454
+  su_accuracy                      0.7141
+  brier                            0.1847
+  logloss                          0.5438
