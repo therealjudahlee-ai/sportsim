@@ -3,6 +3,7 @@ import streamlit as st
 from engine.common import today_et
 from engine.config import get_config
 from ui import components as ui
+from ui.kalshi_tab import kalshi_tab
 from ui import loaders, news, pro_pages
 
 st.set_page_config(page_title="NBA · SportSim", page_icon="🏀", layout="wide")
@@ -24,18 +25,20 @@ ui.data_status(base_ctx, on_refresh=loaders.nba_ctx.clear)
 ctx = news.injury_center("nba", base_ctx)
 preds, src = loaders.with_market(ctx["predictions"], "nba")
 
-tabs = st.tabs(["Games", "Player props", "2x–3x Value", "Parlays", "DFS", "Team ratings"])
+tabs = st.tabs(["Games", "Kalshi", "Player props", "2x–3x Value", "Parlays", "DFS", "Team ratings"])
 with tabs[0]:
     ui.games_board(preds, cfg, src, key="nba_games", default_cards=15)
 with tabs[1]:
-    pro_pages.props_tab("nba", ctx, date_str)
+    kalshi_tab("nba", ctx, preds)
 with tabs[2]:
-    pro_pages.value_tab("nba", ctx, date_str)
+    pro_pages.props_tab("nba", ctx, date_str)
 with tabs[3]:
-    pro_pages.parlay_tab("nba")
+    pro_pages.value_tab("nba", ctx, date_str)
 with tabs[4]:
-    pro_pages.dfs_tab("nba", ctx, date_str)
+    pro_pages.parlay_tab("nba")
 with tabs[5]:
+    pro_pages.dfs_tab("nba", ctx, date_str)
+with tabs[6]:
     ui.ratings_table(ctx["ratings"], uses_poss=True)
     if ctx["team_adj"]:
         st.caption("Injury adjustments today (points): " +

@@ -32,6 +32,23 @@ def _with_odds(preds, sport, diag):
     return preds
 
 
+def _kalshi(sport: str, ctx: dict, preds, now, diag: Diagnostics) -> None:
+    """Log the Kalshi contracts the model flags right now (graded later by kalshi_track.grade)."""
+    from engine import kalshi, kalshi_track
+    mk = kalshi.load_markets(sport, diag)
+    if mk.empty:
+        print(f"  {sport}: no open Kalshi markets")
+        return
+    projs = []
+    stats = sorted(set(mk.loc[mk["kind"] == "prop", "stat"].dropna()))
+    if stats and sport in ("nfl", "nba"):
+        mod = __import__(f"data.{sport}", fromlist=["all_projections"])
+        projs = mod.all_projections(ctx, stats)
+    edges = kalshi.score_markets(mk, preds, get_config(sport), sport, projs)
+    n = kalshi_track.log_edges(edges, pd.Timestamp(now))
+    print(f"  {sport}: {len(edges)} Kalshi contracts matched, {n} flagged edges logged")
+
+
 def espn_results(path: str, dates: list[str], sport: str, diag: Diagnostics, **params) -> pd.DataFrame:
     from data import espn
     out = []
@@ -86,6 +103,10 @@ def run(sport: str, now) -> None:
         raise ValueError(sport)
     preds = _with_odds(ctx["predictions"], sport, diag)
     n = tracking.log_predictions(preds, sport, pd.Timestamp(now))
+    try:
+        _kalshi(sport, ctx, preds, now, diag)
+    except Exception as e:  # Kalshi problems must never block the main log
+        diag.warn("Kalshi logging failed", e)
     print(f"  {sport}: logged {n} predictions; {len(diag.warnings)} warnings")
     for w in diag.warnings:
         print(f"    ! {w}")
@@ -102,6 +123,14 @@ def main(argv=None):
         except Exception:  # one sport failing shouldn't stop the others
             traceback.print_exc()
             failed.append(s)
+    try:
+        from engine import kalshi_track
+        print(f"  kalshi: graded {kalshi_track.grade(diag=Diagnostics())} newly settled contracts")
+        ks = kalshi_track.summary(kalshi_track.graded())
+        if ks:
+            print(f"  kalshi track record: {ks}")
+    except Exception:
+        traceback.print_exc()
     g = tracking.graded()
     if not g.empty:
         for s, grp in g.groupby("sport"):

@@ -31,6 +31,16 @@ Optional, but needed for the props-vs-books, parlay and live-line features: get 
    (optional), and the workflow in `.github/workflows/refresh.yml` will log predictions twice a day
    and grade them. The **Track record** page reads `predictions/*.csv`.
 
+## Kalshi
+
+- Every sport page has a **Kalshi** tab: live Kalshi prices (no account or key needed) for game winners,
+  spread and total ladders, and NFL/NBA player-prop ladders, compared with the model. Contracts are ranked by
+  expected profit per contract **after Kalshi's fee** (taker 0.07 × P × (1−P); limit orders pay a quarter).
+- The scheduled refresh logs every flagged contract (EV ≥ 2¢, liquid) and grades it when Kalshi settles it —
+  see **Track record → Kalshi edges** for win rate, profit after fees and closing-line value.
+- Optional: add `KALSHI_KEY_ID` / `KALSHI_PRIVATE_KEY` to see your own settled positions under
+  **Track record → My Kalshi account**. The app only reads them.
+
 ## Breaking injury news
 
 - The ESPN injury report is re-checked every 15 minutes; anything new shows up as an alert at the top of the
@@ -54,6 +64,8 @@ engine/                 pure Python, no Streamlit (can be reused by an API or an
   edges.py              model vs. no-vig market, parlay search
   odds_api.py           The Odds API client (incl. alternate-line ladders)
   news.py               X insider feed + injury-news matching
+  kalshi.py             Kalshi markets, matching, EV after fees, account settlements
+  kalshi_track.py       logs + grades flagged Kalshi contracts
   dfs.py                slot-assignment DFS optimizer (DK/FD, NFL/NBA)
   backtest.py           walk-forward backtest + tuning
   tracking.py           prediction log, grading, calibration, CLV

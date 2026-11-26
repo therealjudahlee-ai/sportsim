@@ -171,3 +171,24 @@ def _projections(sport: str, built_at: str, stats: tuple, date_str: str, ov: tup
 def projections_for(ctx: dict, stats: tuple) -> list[dict]:
     """Projections for a (possibly overridden) context; cached per override set."""
     return _projections(ctx["sport"], ctx["built_at"], tuple(stats), ctx.get("date", ""), ov_key(ctx))
+
+
+# ------------------------------------------------------------------ Kalshi (no key needed)
+@st.cache_data(ttl=90, show_spinner="Loading Kalshi prices…")
+def kalshi_markets(sport: str) -> tuple[pd.DataFrame, list]:
+    from engine import kalshi
+    diag = Diagnostics()
+    return kalshi.load_markets(sport, diag), diag.warnings
+
+
+def kalshi_keys() -> tuple[str, str]:
+    pem = _secret("KALSHI_PRIVATE_KEY")
+    return _secret("KALSHI_KEY_ID"), pem
+
+
+@st.cache_data(ttl=10 * 60, show_spinner="Loading your Kalshi settlements…")
+def kalshi_settlements() -> tuple[pd.DataFrame, list]:
+    from engine import kalshi
+    kid, pem = kalshi_keys()
+    diag = Diagnostics()
+    return kalshi.fetch_settlements(kid, pem, diag), diag.warnings

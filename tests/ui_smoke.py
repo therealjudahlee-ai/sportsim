@@ -114,6 +114,53 @@ def fake_alt_lines(sport, matchups, stats):
     return pd.DataFrame(rows), "430", []
 
 
+def fake_kalshi(sport):
+    """Build Kalshi-format markets for whatever games the fake slates contain."""
+    from engine import kalshi
+    getter = {"nfl": lambda: loaders.nfl_ctx(), "nba": lambda: loaders.nba_ctx("2026-03-15"),
+              "ncaab": lambda: loaders.ncaab_ctx("2026-03-15")}
+    if sport not in getter:
+        return pd.DataFrame(), []
+    ctx = getter[sport]()
+    raw_g, raw_s, raw_t, raw_p = [], [], [], []
+    for _, p in ctx["predictions"].iterrows():
+        h, a = str(p["home"]), str(p["away"])
+        hn, an = (p.get("home_name") or h), (p.get("away_name") or a)
+        if sport == "ncaab":  # Kalshi uses short school names
+            hn, an = str(hn).replace(" Full", ""), str(an).replace(" Full", "")
+        hc, ac = ("H" + h[-3:]).upper(), ("A" + a[-3:]).upper()
+        if sport in ("nfl", "nba"):
+            hc, ac = h, a
+        ev = f"26NOV27{ac}{hc}"
+        mk = lambda t, ser, title, sub, bid, ask, strike=None: {
+            "ticker": t, "event_ticker": f"{ser}-{ev}", "title": title, "yes_sub_title": sub,
+            "yes_bid_dollars": f"{bid:.4f}", "yes_ask_dollars": f"{ask:.4f}", "last_price_dollars": "0.5",
+            "volume_fp": "50", "close_time": "2026-11-29T03:00:00Z", "status": "active", "result": "",
+            **({"floor_strike": strike} if strike is not None else {})}
+        raw_g += [mk(f"X-{ev}-{hc}", "XG", f"{hn} wins", hn, 0.45, 0.50), mk(f"X-{ev}-{ac}", "XG", f"{an} wins", an, 0.48, 0.53)]
+        raw_s.append(mk(f"XS-{ev}-{hc}3", "XS", f"{hn} wins by over 2.5 points", "", 0.40, 0.45, 2.5))
+        raw_t.append(mk(f"XT-{ev}-T", "XT", f"Over {round(p['model_total']) - 3}.5 points", "", 0.45, 0.50,
+                        round(p["model_total"]) - 3 + 0.5))
+    rows = (kalshi._market_rows(raw_g, "game") + kalshi._market_rows(raw_s, "spread")
+            + kalshi._market_rows(raw_t, "total"))
+    if sport in ("nfl", "nba"):
+        stat = "receiving_yards" if sport == "nfl" else "PTS"
+        for pr in loaders.projections_for(ctx, (stat,))[:15]:
+            g = ctx["game_info"].get(pr["team"])
+            if not g:
+                continue
+            home, away = g["game"].split(" @ ")[1], g["game"].split(" @ ")[0]
+            ev = f"26NOV27{away}{home}"
+            raw_p.append({"ticker": f"XP-{ev}-{pr['player_norm'][:5]}", "event_ticker": f"XP-{ev}",
+                          "title": f"{pr['player']}: 20+", "yes_sub_title": f"{pr['player']}: 20+",
+                          "yes_bid_dollars": "0.40", "yes_ask_dollars": "0.45", "last_price_dollars": "0.4",
+                          "volume_fp": "20", "close_time": "2026-11-29T03:00:00Z", "status": "active",
+                          "floor_strike": 19.5})
+        rows += kalshi._market_rows(raw_p, "prop", stat)
+    return pd.DataFrame(rows), []
+
+
+loaders.kalshi_markets = fake_kalshi
 loaders.alt_lines = fake_alt_lines
 loaders.game_lines = fake_game_lines
 loaders.prop_lines = fake_prop_lines
@@ -162,6 +209,10 @@ results["home2"] = run("app.py", "home (with record)")
 
 bad = {k: v[0] for k, v in results.items() if v[0] == "CRASH"}
 print("\nCRASHES:", bad or "none")
+for k in ("nfl+odds", "nba+odds"):
+    lg = results[k][1]
+    print(k, "kalshi cards:", sum(1 for e in lg if e[0] == "markdown" and str(e[1]).startswith("#### Buy")),
+          "| kalshi caption:", [e[1][:60] for e in lg if e[0] == "caption" and "matched contracts shown" in e[1]])
 log = results["nfl+odds"][1]
 print("news expander:", [e for e in log if e[0] == "expander" and "injury update" in str(e[1])])
 print("override banner:", [e[1][:90] for e in log if e[0] == "info" and "overrides" in e[1]])

@@ -9,3 +9,4 @@ requests>=2.31,<3
 pyarrow>=14
 nflreadpy>=0.1
 nba_api>=1.4
+cryptography>=42   # only for the optional Kalshi account import
